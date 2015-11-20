@@ -265,8 +265,8 @@ let nt_number =
 
 (*Now we need to write a parser for le scheme symbols - 3.2.3*)
 let nt_symbol =
-  let nt_lowercase = pack (range 'a' 'z') Char.uppercase in
-  let nt_uppercase = range 'A' 'Z' in
+  let nt_lowercase = pack (range 'A' 'Z') Char.lowercase in
+  let nt_uppercase = range 'a' 'z' in
   let nt_digits = range '0' '9' in
   let nt_punctuation = disj_list[(char '!');(char '$');(char '^');
                               (char '^');(char '*');(char '-');
@@ -277,11 +277,12 @@ let nt_symbol =
                                      nt_punctuation] in
   let nt_body_of_symbol = plus nt_part_of_symbol in
   pack nt_body_of_symbol (fun b -> 
-    let (e,s) = nt_number b in 
+   try let (e,s) = nt_number b in 
       (match s with 
         | [] -> e 
         | _ -> 
-            Symbol (list_to_string b) ));;
+            Symbol (list_to_string b) )
+    with X_no_match -> Symbol(list_to_string b)) ;;
 
 
  
@@ -416,7 +417,7 @@ let nt_sexpr =
 let read_sexpr str =
   let str = string_to_list str in
   match (nt_sexpr str) with
-  |(a,_) -> a 
+  |(a,[]) -> a 
   | _ -> raise (err "did not fully parse") 
 
 let read_sexprs string = 
@@ -601,14 +602,14 @@ let rec tag_parse = function
   | (Bool _) as b ->Const b | (String _) as s -> Const s | Void -> Const Void 
   | Pair (Symbol "quote", Pair (e,Nil)) -> Const e 
   | Pair (Symbol "unquote", Pair (e,Nil)) -> Const e 
-  |(Pair((Symbol("DEFINE")), (Pair((Symbol(var)),
+  |(Pair((Symbol("define")), (Pair((Symbol(var)),
    (Pair( exp, Nil)))))) -> Def ( Var var, tag_parse exp)
   (*need to check var against list of reserved words*)
-  |(Pair((Symbol("IF")), (Pair(test, (Pair(dit, (Pair(dif, Nil)))))))) ->
+  |(Pair((Symbol("if")), (Pair(test, (Pair(dit, (Pair(dif, Nil)))))))) ->
   If (tag_parse test, tag_parse dit, tag_parse dif)
-  |(Pair((Symbol("IF")), (Pair(test, (Pair(dit, Nil)))))) ->
+  |(Pair((Symbol("if")), (Pair(test, (Pair(dit, Nil)))))) ->
       If(tag_parse test,tag_parse dit, tag_parse Void)
-  |Pair (Symbol "LAMBDA", Pair (ls, Pair(bdy,Nil))) -> 
+  |Pair (Symbol "lambda", Pair (ls, Pair(bdy,Nil))) -> 
       let get_sym = (function |Symbol str -> str 
                              |_->raise (err "Non symbol in lambda")) in
       if is_proper ls then 
@@ -622,7 +623,7 @@ let rec tag_parse = function
         LambdaOpt (args, variadic, tag_parse bdy)
 
   (*Or expression*)
-  |Pair (Symbol "OR", ls) ->
+  |Pair (Symbol "or", ls) ->
       let exprls = List.map tag_parse (pair_to_list ls) in
       Or exprls
 
@@ -630,7 +631,7 @@ let rec tag_parse = function
   | Pair (func, args) ->
       Applic (tag_parse func,
             List.map tag_parse (pair_to_list args))
- (* |  _ -> Const (Symbol "not yet") *)
+  |  _ -> Const (Symbol "not yet") 
 ;;
 let read_expression string = tag_parse (Parser.read_sexpr string);;
 
