@@ -1,0 +1,10 @@
+TODO:
+
+fix skip
+what should we do with named chars, i.e #\\lambda -> ?
+adding hexnumbers
+
+Need to think of a way to convert a Pair nested list into something more
+comfortable to work with
+
+Lambda stuff
