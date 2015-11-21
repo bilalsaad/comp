@@ -635,21 +635,21 @@ let get_sym = (function |Symbol str -> str
  
 let rec tag_parse = function
   (*first couple are the cases, where we have plain Consts *)
-  | (Char _) as c -> Const c   | (Number _) as n -> Const n
+  |(Char _) as c -> Const c   | (Number _) as n -> Const n
   |(Bool _) as b ->Const b 
-  | (String _) as s -> Const s | Void -> Const Void 
+  |(String _) as s -> Const s | Void -> Const Void 
 
   (*dealing with quotes*)
-  | Pair (Symbol "quote", Pair (e,Nil)) -> Const e 
-  | Pair (Symbol "unquote", Pair (e,Nil)) -> Const e 
-  | Pair (Symbol "quasiquote", Pair(e,Nil)) -> tag_parse (expand_qq e) 
+  |Pair (Symbol "quote", Pair (e,Nil)) -> Const e 
+  |Pair (Symbol "unquote", Pair (e,Nil)) -> Const e 
+  |Pair (Symbol "quasiquote", Pair(e,Nil)) -> tag_parse (expand_qq e) 
  
 (*Dealing with defines*)
   (*what happens if we have a list of expressions in the body...?*) 
 
 
 
-  | Pair (Symbol "define", Pair (Pair (Symbol func, ls),Pair(bdy,Nil)))  ->
+  |Pair (Symbol "define", Pair (Pair (Symbol func, ls),Pair(bdy,Nil)))  ->
       let argl = pair_to_list ls in
       Printf.printf "did not fail on argl \n";
       let argl = List.map get_sym argl in
@@ -693,12 +693,15 @@ let rec tag_parse = function
 
   |Pair (Symbol "let", Pair (ls, Pair (bdy, Nil)))  -> 
        expand_let ls bdy tag_parse 
+
+  (*dealing with let star *)
+
   (*Application shit*)
-  | Pair ( func , args) -> 
+  |Pair ( func , args) -> 
       Applic (tag_parse func,
             List.map tag_parse (pair_to_list args))
-  | Symbol s -> Var s
-  |  _ -> Const (Symbol "not yet") 
+  |Symbol s -> Var s
+  | _ -> Const (Symbol "not yet") 
 ;;
 let read_expression string = tag_parse (Parser.read_sexpr string);;
 
@@ -713,7 +716,3 @@ let test_parser string =
   let string' = (Tag_Parser.expression_to_string expr) in
   Printf.printf "%s\n" string';;
 
-(*
-
-Pair (Symbol "let", Pair (Pair (Pair (Symbol "x", Pair (Number (Int 1), Nil)),
-Nil), Pair (Number (Int 1), Nil)));;; *)
