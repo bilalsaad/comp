@@ -10,7 +10,7 @@ exception X_not_yet_implemented;;
 exception X_this_should_not_happen;;
 exception X_error of string;; 
 let err str = X_error str;;
-
+let debug str = Printf.printf "DEBUG: %s\n" str;;
 let rec ormap f s =
   match s with
   | [] -> false
@@ -476,7 +476,24 @@ let rec process_scheme_list s ret_nil ret_one ret_several =
 			 (fun sexpr' -> ret_several [sexpr; sexpr'])
 			 (fun sexprs -> ret_several (sexpr :: sexprs))
   | _ -> raise X_syntax_error;;
-  
+
+(*converts a Pair proper list into a list of sexpressions*)
+let rec pair_to_list = function
+  | Pair(e1,Nil) -> [e1] 
+  | Pair(e1, Pair (x,y) ) -> e1 ::pair_to_list (Pair (x,y))
+  | _ -> raise (err "pair_to_list, last case")
+;;
+(* Given an improper list (l1.end) we return the pair l1 where l1 is a
+ * list of sexpresions and end is the last element in such list*)
+
+let rec improper_to_list acc = function
+  | Pair(e1,Pair(x,y)) -> improper_to_list (e1 :: acc) (Pair(x,y))
+  | Pair(e1,e2) -> 
+      let acc = e1 :: acc in
+      (List.rev acc,e2) 
+  | (Symbol _) as s -> ([],s)
+  | _  -> raise (err "improper_to_list invoked on non pair");;
+
 let scheme_list_to_ocaml_list args = 
   process_scheme_list args
 		      (fun () -> [])
@@ -591,9 +608,20 @@ let rec expand_cond = function
 
  (*Expanding le let*)
 
-let rec expand_let = raise X_not_yet_implemented;;
 
- 
+(* we map f on the args *)
+let expand_let args bdy f =
+  let args = pair_to_list args in
+  let args_vals = List.map pair_to_list args in 
+  let params = List.map (function 
+                         | [Symbol x ; _]  -> x
+                         | _ -> raise (err "error let expand. in map"))
+                       args_vals in
+  let args = List.map (fun ls -> List.nth ls 1) args_vals in
+  let lambda = LambdaSimple(params, f bdy) in
+  Applic (lambda, (List.map f args));; 
+
+
   
  (*checks if a given pair , is a proper list*)
 let rec is_proper = function
@@ -601,25 +629,9 @@ let rec is_proper = function
   | Pair(_,Pair(x,y)) -> is_proper (Pair (x,y))
   | _ -> false;;
 
-(*converts a Pair proper list into a list of sexpressions*)
-let rec pair_to_list = function
-  | Pair(e1,Nil) -> [e1] 
-  | Pair(e1, Pair (x,y) ) -> e1 ::pair_to_list (Pair (x,y))
-  | _ -> raise (err "pair_to_list, last case")
-;;
-(* Given an improper list (l1.end) we return the pair l1 where l1 is a
- * list of sexpresions and end is the last element in such list*)
-
-let rec improper_to_list acc = function
-  | Pair(e1,Pair(x,y)) -> improper_to_list (e1 :: acc) (Pair(x,y))
-  | Pair(e1,e2) -> 
-      let acc = e1 :: acc in
-      (List.rev acc,e2) 
-  | (Symbol _) as s -> ([],s)
-  | _  -> raise (err "improper_to_list invoked on non pair");;
 
 let get_sym = (function |Symbol str -> str 
-                         |_->raise (err "Non symbol in lambda")) ;; 
+                         |_->raise (err "Non symbol in lambda args")) ;; 
  
 let rec tag_parse = function
   (*first couple are the cases, where we have plain Consts *)
@@ -675,7 +687,12 @@ let rec tag_parse = function
       let exprls = List.map tag_parse (pair_to_list ls) in
       Or exprls
   (*cond shiz*)
-  |Pair (Symbol "cond", ls) -> tag_parse (expand_cond (pair_to_list ls)) 
+  |Pair (Symbol "cond", ls) -> tag_parse (expand_cond (pair_to_list ls))
+
+  (*dealign with let *)
+
+  |Pair (Symbol "let", Pair (ls, Pair (bdy, Nil)))  -> 
+       expand_let ls bdy tag_parse 
   (*Application shit*)
   | Pair ( func , args) -> 
       Applic (tag_parse func,
@@ -696,6 +713,7 @@ let test_parser string =
   let string' = (Tag_Parser.expression_to_string expr) in
   Printf.printf "%s\n" string';;
 
+(*
 
-
-
+Pair (Symbol "let", Pair (Pair (Pair (Symbol "x", Pair (Number (Int 1), Nil)),
+Nil), Pair (Number (Int 1), Nil)));;; *)
