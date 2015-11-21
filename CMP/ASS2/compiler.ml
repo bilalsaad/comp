@@ -618,7 +618,8 @@ let expand_let args bdy f =
                          | _ -> raise (err "error let expand. in map"))
                        args_vals in
   let args = List.map (fun ls -> List.nth ls 1) args_vals in
-  let lambda = LambdaSimple(params, f bdy) in
+  let bdy = List.map f (pair_to_list bdy) in
+  let lambda = LambdaSimple(params, Seq bdy) in
   Applic (lambda, (List.map f args));; 
 
 
@@ -670,17 +671,18 @@ let rec tag_parse = function
 
 
 
-  |Pair (Symbol "lambda", Pair (ls, Pair(bdy,Nil))) -> 
-
+  |Pair (Symbol "lambda", Pair (ls, bdy)) -> 
+      let bdy = List.map tag_parse (pair_to_list bdy) in
+      let bdy = Seq bdy in
       if is_proper ls then 
         let args = pair_to_list ls in
         let args = List.map get_sym args in
-        LambdaSimple (args, tag_parse bdy)
+        LambdaSimple (args, bdy)
       else
         let (args,variadic) = improper_to_list [] ls in
         let args = List.map get_sym args in
         let variadic = get_sym variadic in
-        LambdaOpt (args, variadic, tag_parse bdy)
+        LambdaOpt (args, variadic, bdy)
 
   (*Or expression*)
   |Pair (Symbol "or", ls) ->
@@ -691,10 +693,16 @@ let rec tag_parse = function
 
   (*dealign with let *)
 
-  |Pair (Symbol "let", Pair (ls, Pair (bdy, Nil)))  -> 
+  |Pair (Symbol "let", Pair (ls, bdy))  -> 
        expand_let ls bdy tag_parse 
 
   (*dealing with let star *)
+  |Pair (Symbol "let*", Pair (ls, bdy))  -> 
+      tag_parse (expand_let_star ls bdy)
+
+    (*dealing with let rec *)
+  |Pair (Symbol "letrec", Pair (ls, bdy))  -> 
+      tag_parse (expand_letrec ls bdy)
 
   (*Application shit*)
   |Pair ( func , args) -> 
