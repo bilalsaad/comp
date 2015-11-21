@@ -597,21 +597,48 @@ let rec improper_to_list acc = function
   | (Symbol _) as s -> ([],s)
   | _  -> raise (err "improper_to_list invoked on non pair");;
 
+let get_sym = (function |Symbol str -> str 
+                         |_->raise (err "Non symbol in lambda")) ;; 
+ 
 let rec tag_parse = function
-  | (Char _) as c -> Const c | (Number _) as n -> Const n 
-  | (Bool _) as b ->Const b | (String _) as s -> Const s | Void -> Const Void 
+  (*first couple are the cases, where we have plain Consts *)
+  | (Char _) as c -> Const c   | (Number _) as n -> Const n
+  |(Bool _) as b ->Const b 
+  | (String _) as s -> Const s | Void -> Const Void 
+
+  (*dealing with quotes*)
   | Pair (Symbol "quote", Pair (e,Nil)) -> Const e 
   | Pair (Symbol "unquote", Pair (e,Nil)) -> Const e 
+  | Pair (Symbol "quasiquote", Pair(e,Nil)) -> tag_parse (expand_qq e) 
+ 
+(*Dealing with defines*)
+  (*what happens if we have a list of expressions in the body...?*) 
+
+
+
+  | Pair (Symbol "define", Pair (Pair (Symbol func, ls),Pair(bdy,Nil)))  ->
+      let argl = pair_to_list ls in
+      Printf.printf "did not fail on argl \n";
+      let argl = List.map get_sym argl in
+      Def (Var func, LambdaSimple (argl, tag_parse bdy))
+
+
   |(Pair((Symbol("define")), (Pair((Symbol(var)),
    (Pair( exp, Nil)))))) -> Def ( Var var, tag_parse exp)
   (*need to check var against list of reserved words*)
+
+
+
+
   |(Pair((Symbol("if")), (Pair(test, (Pair(dit, (Pair(dif, Nil)))))))) ->
-  If (tag_parse test, tag_parse dit, tag_parse dif)
+       If (tag_parse test, tag_parse dit, tag_parse dif)
   |(Pair((Symbol("if")), (Pair(test, (Pair(dit, Nil)))))) ->
       If(tag_parse test,tag_parse dit, tag_parse Void)
+
+
+
   |Pair (Symbol "lambda", Pair (ls, Pair(bdy,Nil))) -> 
-      let get_sym = (function |Symbol str -> str 
-                             |_->raise (err "Non symbol in lambda")) in
+
       if is_proper ls then 
         let args = pair_to_list ls in
         let args = List.map get_sym args in
@@ -628,9 +655,10 @@ let rec tag_parse = function
       Or exprls
 
   (*Application shit*)
-  | Pair (func, args) ->
+  | Pair ( func , args) -> 
       Applic (tag_parse func,
             List.map tag_parse (pair_to_list args))
+  | Symbol s -> Var s
   |  _ -> Const (Symbol "not yet") 
 ;;
 let read_expression string = tag_parse (Parser.read_sexpr string);;
@@ -645,4 +673,7 @@ let test_parser string =
   let expr = Tag_Parser.read_expression string in
   let string' = (Tag_Parser.expression_to_string expr) in
   Printf.printf "%s\n" string';;
+
+
+
 
