@@ -637,7 +637,7 @@ let get_sym = (function |Symbol str -> str
 let rec tag_parse = function
   (*first couple are the cases, where we have plain Consts *)
   |(Char _) as c -> Const c   | (Number _) as n -> Const n
-  |(Bool _) as b ->Const b 
+  |(Bool _) as b ->Const b    | Nil -> Const Nil
   |(String _) as s -> Const s | Void -> Const Void 
 
   (*dealing with quotes*)
@@ -709,7 +709,8 @@ let rec tag_parse = function
       Applic (tag_parse func,
             List.map tag_parse (pair_to_list args))
   |Symbol s -> Var s
-  | _ -> Const (Symbol "not yet") 
+  |Vector _ -> raise (err "Don't know what to do with vectors in tag_parse")
+   
 ;;
 let read_expression string = tag_parse (Parser.read_sexpr string);;
 
