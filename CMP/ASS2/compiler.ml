@@ -641,7 +641,7 @@ let rec tag_parse = function
   |(String _) as s -> Const s | Void -> Const Void 
 
   (*dealing with quotes*)
-  |Pair (Symbol "quote", Pair (e,Nil)) -> Const e 
+  |Pair (Symbol "quote", e) -> Const e 
   |Pair (Symbol "unquote", Pair (e,Nil)) -> Const e 
   |Pair (Symbol "quasiquote", Pair(e,Nil)) -> tag_parse (expand_qq e) 
  
@@ -716,8 +716,65 @@ let read_expression string = tag_parse (Parser.read_sexpr string);;
 
 let read_expressions string = List.map tag_parse (Parser.read_sexprs string);;
 
-let expression_to_string expr = raise X_not_yet_implemented;;
-  
+let cat_space a b = a ^ " " ^ b;;
+
+
+let rec expression_to_string = function 
+
+  |Const Pair (e1,Nil)  ->
+      if is_proper e1 then
+        let ls = pair_to_list e1 in
+        let ls = List.map (fun x -> expression_to_string (Const x)) ls in
+        "'(" ^ (List.fold_right cat_space ls "") ^ ")"
+
+      else (match e1 with 
+          |Pair(_,_) -> 
+            let ls,tl = improper_to_list  [] e1 in
+            let ls,tl = List.map (fun x-> expression_to_string (Const x)) ls,
+                        expression_to_string (Const tl) in
+              "'(" ^(List.fold_right cat_space ls "") ^ ". " ^ tl ^ " )"
+          |Symbol x -> "'" ^ x
+          |_ -> expression_to_string (Const e1) )
+  |Const (Symbol x) ->  x
+  |Const Nil -> "'()" 
+  |Const a -> Sexpr.sexpr_to_string a
+  |Var s -> s
+  |If (test,dit,dif) ->
+      let test,dit,dif = expression_to_string test, expression_to_string dit
+                 , expression_to_string dif in
+      "(if " ^ test ^ " " ^ dif ^ " " ^ dit ^ ")"
+  |Seq es -> 
+    let strs = List.map expression_to_string es in
+     List.fold_right cat_space strs ""
+  |Set (e1,e2) -> 
+    let e1,e2 = expression_to_string e1, expression_to_string e2 in
+    "(set! " ^ e1 ^ " " ^ e2 ^ ")"
+  |Def (e1,e2) ->
+    let e1,e2 = expression_to_string e1, expression_to_string e2 in
+    "(define " ^ e1  ^ " " ^ e2 ^ ")"
+  |Or es -> 
+    let strs = List.map expression_to_string es in
+    "(or " ^ (List.fold_right cat_space strs "") ^ ")"
+  |LambdaSimple (params,bdy) ->   
+    let params,bdy=List.fold_right cat_space params "",
+                       expression_to_string bdy in
+    "(lambda (" ^ params ^")" ^ bdy ^")"
+  |LambdaOpt ([], v,bdy) ->
+     "(lambda " ^ v ^ (expression_to_string bdy) ^ ")"
+  |LambdaOpt (params,v,bdy) -> 
+    let params,bdy=List.fold_right cat_space params "",
+                 expression_to_string bdy in
+    let params = params ^ " . " ^ v in
+    "(lambda (" ^ params ^")" ^ bdy ^")"
+  |Applic (op, args) ->
+      let op,args = expression_to_string op,
+                    List.map expression_to_string args in
+      let args = List.fold_right cat_space args "" in
+      "(" ^ op ^ " " ^ args ^ ")"
+  | _ -> raise (err "stuff not yet demanded to print")
+;;
+
+
 end;; (* struct Tag_Parser *)
 
 let test_parser string =
@@ -725,3 +782,20 @@ let test_parser string =
   let string' = (Tag_Parser.expression_to_string expr) in
   Printf.printf "%s\n" string';;
 
+
+
+
+(*
+ *
+ *
+ *
+ *
+ *       let e1 = expression_to_string (Const e1) in
+      let e2 = expression_to_string (Const e2) in
+      let e2 = if (String.get e2 0) = '\'' && 
+                  (String.length e2 > 1) then 
+                   let len = String.length e2 - 3 in
+                   String.sub e2 2 len 
+               else 
+                   e2 in
+        "'(" ^ e1 ^ " " ^ e2 ^ ")"  *)
