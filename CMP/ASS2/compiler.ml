@@ -574,7 +574,28 @@ let rec expand_qq sexpr = match sexpr with
   | Nil | Symbol _ -> (Pair((Symbol("quote")), (Pair(sexpr, Nil))))
   | expr -> expr;;
 
-(*checks if a given pair , is a proper list*)
+
+
+
+let rec expand_cond = function 
+  | [] ->raise  (err "expanding empty cond")
+  | [Pair(Symbol "else",Pair(e1,Nil))] -> e1
+  | [Pair(test,Pair(e1,Nil))] -> 
+     Pair (Symbol "if", Pair (test, Pair (e1, Nil))) 
+  | Pair(test,Pair(e1,Nil)) :: xs ->
+    Pair(Symbol "if", Pair (test, Pair (e1,Pair((expand_cond xs), Nil))))   
+  | _ -> raise (err "Probably not a cond expression ;(")
+ 
+
+
+
+ (*Expanding le let*)
+
+let rec expand_let = raise X_not_yet_implemented;;
+
+ 
+  
+ (*checks if a given pair , is a proper list*)
 let rec is_proper = function
   | Pair(_,Nil) -> true
   | Pair(_,Pair(x,y)) -> is_proper (Pair (x,y))
@@ -653,7 +674,8 @@ let rec tag_parse = function
   |Pair (Symbol "or", ls) ->
       let exprls = List.map tag_parse (pair_to_list ls) in
       Or exprls
-
+  (*cond shiz*)
+  |Pair (Symbol "cond", ls) -> tag_parse (expand_cond (pair_to_list ls)) 
   (*Application shit*)
   | Pair ( func , args) -> 
       Applic (tag_parse func,
