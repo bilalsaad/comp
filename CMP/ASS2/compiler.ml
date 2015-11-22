@@ -103,7 +103,8 @@ let rec sexpr_to_string = function
         e1 ^ "." ^ (sexpr_to_string e2) ^ ")"
   | Vector ls ->
       let bdy = List.map sexpr_to_string ls in
-      let bdy = List.fold_right (^) bdy "" in
+      let bdy = List.fold_right (fun a b -> a ^ " " ^ b)  
+                bdy "" in
       "#( " ^ bdy ^ ")";;
             
 end;; (* struct Sexpr *)
@@ -244,6 +245,8 @@ let get_int_val = function
     if x = 0 then raise (err "X_invalid_fraction")
     else (Fraction {numerator = a ;denominator =x})
 ;;*)  
+let rec gcd a b =
+    if b = 0 then a else gcd b (a mod b);;
 let nt_fract = 
   let nt_numer = nt_scm_int in
   let nt_slash = char '/' in 
@@ -254,9 +257,10 @@ let nt_fract =
           if b < 1 
             then raise (err "X_invalid_fraction") 
           else
-           
-          let numerator = a in
-          let denominator = b in
+          let d = gcd a b in 
+          let numerator = a/d in
+          let denominator = b/d in
+          if denominator = 1 then Int numerator else
           (Fraction {numerator ; denominator}));;
 (*now we combine to create nt_number *)
 let nt_number =
@@ -773,7 +777,7 @@ let rec expression_to_string = function
       "(" ^ op ^ " " ^ args ^ ")"
   | _ -> raise (err "stuff not yet demanded to print")
 ;;
-
+ 
 
 end;; (* struct Tag_Parser *)
 
@@ -785,17 +789,4 @@ let test_parser string =
 
 
 
-(*
- *
- *
- *
- *
- *       let e1 = expression_to_string (Const e1) in
-      let e2 = expression_to_string (Const e2) in
-      let e2 = if (String.get e2 0) = '\'' && 
-                  (String.length e2 > 1) then 
-                   let len = String.length e2 - 3 in
-                   String.sub e2 2 len 
-               else 
-                   e2 in
-        "'(" ^ e1 ^ " " ^ e2 ^ ")"  *)
+
