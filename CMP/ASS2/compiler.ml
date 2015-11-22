@@ -351,11 +351,9 @@ let ign = const (fun _ ->false);;
 let nt_sexpr =
   let rec make()=
     let nt_lb,nt_rb = add_skip ign (char '('), add_skip ign (char ')') in
-    let rec exp () =
-      let expr = plus (delayed make) in
-      pack (caten nt_lb (caten expr nt_rb)) (fun (_,(ls,_)) -> ls) 
 
-    and nt_pair = 
+
+    let rec nt_pair = 
      let nt_lb,nt_rb = add_skip (delayed make)  (char '('),
                         add_skip (delayed make) (char ')') in 
      let nt_sexpr = delayed make in
@@ -637,7 +635,12 @@ let rec is_proper = function
 
 let get_sym = (function |Symbol str -> str 
                          |_->raise (err "Non symbol in lambda args")) ;; 
- 
+
+let make_var v =
+  if List.mem v reserved_word_list then
+    raise X_syntax_error
+  else
+    Var v;;
 let rec tag_parse = function
   (*first couple are the cases, where we have plain Consts *)
   |(Char _) as c -> Const c   | (Number _) as n -> Const n
@@ -654,15 +657,13 @@ let rec tag_parse = function
 
 
 
-  |Pair (Symbol "define", Pair (Pair (Symbol func, ls),Pair(bdy,Nil)))  ->
-      let argl = pair_to_list ls in
-      Printf.printf "did not fail on argl \n";
-      let argl = List.map get_sym argl in
-      Def (Var func, LambdaSimple (argl, tag_parse bdy))
+  |Pair (Symbol "define", Pair (Pair (Symbol func, ls),bdy))  ->
+      let expr = tag_parse (Pair (Symbol "lambda", Pair (ls, bdy))) in
+      Def (make_var func,expr)
 
 
   |(Pair((Symbol("define")), (Pair((Symbol(var)),
-   (Pair( exp, Nil)))))) -> Def ( Var var, tag_parse exp)
+   (Pair( exp, Nil)))))) -> Def ( make_var var, tag_parse exp)
   (*need to check var against list of reserved words*)
 
 
@@ -690,8 +691,13 @@ let rec tag_parse = function
 
   (*Or expression*)
   |Pair (Symbol "or", ls) ->
+      if ls = Nil then Const (Bool false) else
       let exprls = List.map tag_parse (pair_to_list ls) in
-      Or exprls
+      (match exprls with
+      | [] -> raise (err "empty list in or") 
+      | [x] -> x
+      | _ -> Or exprls
+      )
   (*cond shiz*)
   |Pair (Symbol "cond", ls) -> tag_parse (expand_cond (pair_to_list ls))
 
@@ -712,7 +718,7 @@ let rec tag_parse = function
   |Pair ( func , args) -> 
       Applic (tag_parse func,
             List.map tag_parse (pair_to_list args))
-  |Symbol s -> Var s
+  |Symbol s -> make_var s
   |Vector _ -> raise (err "Don't know what to do with vectors in tag_parse")
    
 ;;
@@ -746,10 +752,14 @@ let rec expression_to_string = function
   |If (test,dit,dif) ->
       let test,dit,dif = expression_to_string test, expression_to_string dit
                  , expression_to_string dif in
-      "(if " ^ test ^ " " ^ dif ^ " " ^ dit ^ ")"
+      "(if " ^ test ^ " " ^ dit ^ " " ^ dif ^ ")"
   |Seq es -> 
     let strs = List.map expression_to_string es in
-     List.fold_right cat_space strs ""
+     if (List.length strs) = 1 then
+       List.hd strs
+     else
+
+    "(begin " ^(List.fold_right cat_space strs ")") 
   |Set (e1,e2) -> 
     let e1,e2 = expression_to_string e1, expression_to_string e2 in
     "(set! " ^ e1 ^ " " ^ e2 ^ ")"
