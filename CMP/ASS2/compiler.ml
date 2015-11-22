@@ -131,7 +131,7 @@ let nt_sk_wh =
   pack nt (fun x -> Nil);;
 let nt_line_comment =
   let nt_semi = char ';' in
-  let nt_nline = char '\n' in
+  let nt_nline = disj (char '\n') (pack nt_end_of_input (fun _ -> '\n'))  in
   let nt = caten nt_semi (star (diff nt_any nt_nline)) in
   let nt = caten nt nt_nline in 
   pack nt (fun x -> Nil)
@@ -230,23 +230,15 @@ let nt_scm_int =
 
 let nt_scm_uint =
   pack (disj nt_uhex nt_nat) (fun x-> Int x);;
-(*now we want create a parser for the fractions *)
-(* fractions have num/denom, where
- * num -> int
- * denom ->uint*)
-(* may need to ignore 0 here... *)
-(*may need to add hexa? *)
+
 let get_int_val = function
   | Int x -> x 
   | _ -> raise (err "get val defined only for ints");;
 
-(*let check_valid_frac = function
-| Fraction {numerator = a ;denominator= x}  -> 
-    if x = 0 then raise (err "X_invalid_fraction")
-    else (Fraction {numerator = a ;denominator =x})
-;;*)  
+
 let rec gcd a b =
     if b = 0 then a else gcd b (a mod b);;
+
 let nt_fract = 
   let nt_numer = nt_scm_int in
   let nt_slash = char '/' in 
@@ -294,13 +286,14 @@ let nt_string =
   let nt_quote = char '"' in
   let meta_characters=[(1,(word "\\n"));(2,(word "\\r"));
                         (3,(word "\\t"));(4,(word "\\\\"));
-                        (5,(word "\\\"")) ] in
+                        (5,(word "\\\"")) ;(6, (word "\\f"))] in
   let meta_characters = List.map (function
     | (1,e) -> pack e (fun _ -> '\n')
     | (2,e) -> pack e (fun _ -> '\r')
     | (3,e) -> pack e (fun _ -> '\t')
     | (4,e) -> pack e (fun _ -> '\\')
     | (5,e) -> pack e (fun _ -> '\"')
+    | (6,e) -> pack e (fun _ -> '\012')
     | _ -> raise (err "meta characters error")) meta_characters in
   let nt_meta = disj_list meta_characters in
   let nt_m_any = diff nt_any nt_meta in
@@ -315,14 +308,17 @@ let nt_char =
   let nt_prefix = word "#\\" in
   let nt_named_chars = disj_list
                          [(word_ci "newline");(word_ci "return");
-                         (word_ci "tab");(word_ci "page")] 
+                         (word_ci "tab");(word_ci "page");
+                         (word_ci "space")] 
                        in
   let nt_named_chars = pack nt_named_chars 
     (fun s -> match (list_to_string s) with
       "newline" -> Char '\n'
     | "return" ->  Char '\r'
-    | "tab" -> Char (Char.chr 12)  
-    | _ -> Char 'x'
+    | "tab" -> Char '\t'  
+    | "page"  -> Char (Char.chr 12)
+    | "space" -> Char ' '
+    | _ -> raise (err "invalid named char ")
     ) 
   
   in
