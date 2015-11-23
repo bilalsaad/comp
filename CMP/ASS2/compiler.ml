@@ -621,7 +621,15 @@ let expand_let args bdy f =
   Applic (lambda, (List.map f args));; 
 
 
-  
+ 
+let rec expand_and = function
+  | [] -> Bool true
+  | x :: [] -> x
+  | x :: y ::  []  -> 
+     Pair (Symbol "if", Pair (x, Pair (y, Pair (Bool false, Nil))))  
+  | x :: xs ->
+      Pair (Symbol "if", Pair (x, Pair (expand_and xs,
+       Pair (Bool false, Nil))))  
  (*checks if a given pair , is a proper list*)
 let rec is_proper = function
   | Pair(_,Nil) -> true
@@ -637,6 +645,7 @@ let make_var v =
     raise X_syntax_error
   else
     Var v;;
+
 let rec tag_parse = function
   (*first couple are the cases, where we have plain Consts *)
   |(Char _) as c -> Const c   | (Number _) as n -> Const n
@@ -697,7 +706,11 @@ let rec tag_parse = function
   (*cond shiz*)
   |Pair (Symbol "cond", ls) -> tag_parse (expand_cond (pair_to_list ls))
 
-  (*dealign with let *)
+  |Pair (Symbol "and", ls) -> 
+      let ls = if ls = Nil then [] else (pair_to_list ls) in
+      tag_parse (expand_and ls)
+    
+     (*dealign with let *)
 
   |Pair (Symbol "let", Pair (ls, bdy))  -> 
        expand_let ls bdy tag_parse 
@@ -710,6 +723,16 @@ let rec tag_parse = function
   |Pair (Symbol "letrec", Pair (ls, bdy))  -> 
       tag_parse (expand_letrec ls bdy)
 
+
+  |Pair (Symbol "set!", Pair(Symbol var,exp)) ->
+      let var = make_var var in
+      let bdy = List.map tag_parse (pair_to_list exp) in
+      let bdy = Seq bdy in
+      Set(var,bdy)
+  |Pair (Symbol "begin", bdy) -> 
+      if bdy = Nil then Const Void else
+      let bdy = List.map tag_parse (pair_to_list bdy) in
+      Seq bdy
   (*Application shit*)
   |Pair ( func , args) -> 
       Applic (tag_parse func,
@@ -743,6 +766,7 @@ let rec expression_to_string = function
           |_ -> expression_to_string (Const e1) )
   |Const (Symbol x) ->  x
   |Const Nil -> "'()" 
+  |Const Void -> "(void)"
   |Const a -> Sexpr.sexpr_to_string a
   |Var s -> s
   |If (test,dit,dif) ->
@@ -751,6 +775,7 @@ let rec expression_to_string = function
       "(if " ^ test ^ " " ^ dit ^ " " ^ dif ^ ")"
   |Seq es -> 
     let strs = List.map expression_to_string es in
+
      if (List.length strs) = 1 then
        List.hd strs
      else
