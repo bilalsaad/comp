@@ -89,7 +89,7 @@ let rec sexpr_to_string = function
                 (string_of_int a) ^ "/" ^ (string_of_int b))
 
   | Char e -> "#\\" ^ (list_to_string [e]) 
-  | String e -> e
+  | String e ->  "\"" ^e ^ "\""
   | Symbol e -> e
   | Pair (e1,e2) ->  
       let e1 = "(" ^ (sexpr_to_string e1) ^ " " in
