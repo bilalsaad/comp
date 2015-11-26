@@ -105,7 +105,7 @@ let rec sexpr_to_string = function
       let bdy = List.map sexpr_to_string ls in
       let bdy = List.fold_right (fun a b -> a ^ " " ^ b)  
                 bdy "" in
-      "#( " ^ bdy ^ ")";;
+      "#(" ^ bdy ^ ")";;
             
 end;; (* struct Sexpr *)
 
@@ -306,22 +306,12 @@ let nt_string =
 
 let nt_char = 
   let nt_prefix = word "#\\" in
+  let foo word charval = pack (word_ci word) (fun _ -> Char charval) in
   let nt_named_chars = disj_list
-                         [(word_ci "newline");(word_ci "return");
-                         (word_ci "tab");(word_ci "page");
-                         (word_ci "space")] 
+                         [foo "newline" '\n';(foo "return" '\r');
+                         (foo "tab" '\t');(foo "page" (Char.chr 12) );
+                         (foo "space" ' ')] 
                        in
-  let nt_named_chars = pack nt_named_chars 
-    (fun s -> match (list_to_string s) with
-      "newline" -> Char '\n'
-    | "return" ->  Char '\r'
-    | "tab" -> Char '\t'  
-    | "page"  -> Char (Char.chr 12)
-    | "space" -> Char ' '
-    | _ -> raise (err "invalid named char ")
-    ) 
-  
-  in
     
   let nt_visible_chars = const (fun x -> x > ' ') in
   let nt_visible_chars = pack nt_visible_chars (fun x -> Char x) in
@@ -455,6 +445,7 @@ module type TAG_PARSER = sig
   val read_expression : string -> expr
   val read_expressions : string -> expr list
   val expression_to_string : expr -> string
+  val tag_parse : sexpr -> expr
 end;; (* signature TAG_PARSER *)
 
 module Tag_Parser : TAG_PARSER = struct
@@ -738,7 +729,7 @@ let rec tag_parse = function
       Applic (tag_parse func,
             List.map tag_parse (pair_to_list args))
   |Symbol s -> make_var s
-  |Vector _ -> raise (err "Don't know what to do with vectors in tag_parse")
+  |Vector v -> Const (Vector v) 
    
 ;;
 let read_expression string = tag_parse (Parser.read_sexpr string);;
