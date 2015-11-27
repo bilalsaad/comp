@@ -729,8 +729,8 @@ let rec tag_parse = function
       Applic (tag_parse func,
             List.map tag_parse (pair_to_list args))
   |Symbol s -> make_var s
-  |Vector v -> Const (Vector v) 
-   
+  |Vector v -> raise X_syntax_error
+    
 ;;
 let read_expression string = tag_parse (Parser.read_sexpr string);;
 
@@ -740,7 +740,6 @@ let cat_space a b = a ^ " " ^ b;;
 
 
 let rec expression_to_string = function 
-
   |Const Pair (e1,Nil)  ->
       if is_proper e1 then
         let ls = pair_to_list e1 in
