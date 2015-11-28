@@ -644,8 +644,8 @@ let rec tag_parse = function
   |(String _) as s -> Const s | Void -> Const Void 
 
   (*dealing with quotes*)
-  |Pair (Symbol "quote", e) -> Const e 
-  |Pair (Symbol "unquote", Pair (e,Nil)) -> Const e 
+  |Pair (Symbol "quote", Pair(e,Nil))  -> Const e 
+  |(Pair (Symbol "unquote", Pair(e,Nil))) -> Const e 
   |Pair (Symbol "quasiquote", Pair(e,Nil)) -> tag_parse (expand_qq e) 
  
 (*Dealing with defines*)
@@ -740,23 +740,9 @@ let cat_space a b = a ^ " " ^ b;;
 
 
 let rec expression_to_string = function 
-  |Const Pair (e1,Nil)  ->
-      if is_proper e1 then
-        let ls = pair_to_list e1 in
-        let ls = List.map (fun x -> expression_to_string (Const x)) ls in
-        "'(" ^ (List.fold_right cat_space ls "") ^ ")"
-
-      else (match e1 with 
-          |Pair(_,_) -> 
-            let ls,tl = improper_to_list  [] e1 in
-            let ls,tl = List.map (fun x-> expression_to_string (Const x)) ls,
-                        expression_to_string (Const tl) in
-              "'(" ^(List.fold_right cat_space ls "") ^ ". " ^ tl ^ " )"
-          |Symbol x -> "'" ^ x
-          |_ -> expression_to_string (Const e1) )
-  |Const (Symbol x) ->  x
-  |Const Nil -> "'()" 
   |Const Void -> "(void)"
+  |Const ((Pair (_,_)) as a) | Const ((Symbol _) as a)
+             -> "'" ^ Sexpr.sexpr_to_string a
   |Const a -> Sexpr.sexpr_to_string a
   |Var s -> s
   |If (test,dit,dif) ->
