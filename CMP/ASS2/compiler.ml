@@ -585,16 +585,26 @@ let rec expand_qq sexpr = match sexpr with
 
 let rec expand_cond = function 
   | [] ->raise  (err "expanding empty cond")
+  | [Pair(Symbol "else",e1)] -> Pair(Symbol "begin",e1)
+  | [Pair(test,e1)] -> 
+     Pair (Symbol "if", Pair (test, Pair (Pair(Symbol "begin", e1), Nil))) 
+  | Pair(test,Pair(e1,Nil)) :: xs ->
+    Pair(Symbol "if", Pair (test, Pair (e1,Pair((expand_cond xs), Nil))))
+  | Pair(test,es) :: xs ->
+    Pair(Symbol "if", Pair(test,
+     Pair(Pair(Symbol "begin",es),Pair((expand_cond xs),Nil))))  
+  | _ -> raise (err "Probably not a cond expression ;(")
+ 
+(*
+let rec expand_cond = function 
+  | [] ->raise  (err "expanding empty cond")
   | [Pair(Symbol "else",Pair(e1,Nil))] -> e1
   | [Pair(test,Pair(e1,Nil))] -> 
      Pair (Symbol "if", Pair (test, Pair (e1, Nil))) 
   | Pair(test,Pair(e1,Nil)) :: xs ->
     Pair(Symbol "if", Pair (test, Pair (e1,Pair((expand_cond xs), Nil))))   
   | _ -> raise (err "Probably not a cond expression ;(")
- 
-
-
-
+*)
  (*Expanding le let*)
 
 
@@ -741,6 +751,7 @@ let cat_space a b = a ^ " " ^ b;;
 
 let rec expression_to_string = function 
   |Const Void -> "(void)"
+  |Const Nil -> "'()"
   |Const ((Pair (_,_)) as a) | Const ((Symbol _) as a)
              -> "'" ^ Sexpr.sexpr_to_string a
   |Const a -> Sexpr.sexpr_to_string a
@@ -792,7 +803,6 @@ let test_parser string =
   let expr = Tag_Parser.read_expression string in
   let string' = (Tag_Parser.expression_to_string expr) in
   Printf.printf "%s\n" string';;
-
 
 
 
