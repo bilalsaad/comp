@@ -88,7 +88,7 @@ let rec sexpr_to_string = function
             | Fraction {numerator=a;denominator=b} ->
                 (string_of_int a) ^ "/" ^ (string_of_int b))
 
-  | Char e -> "#\\" ^ (list_to_string [e]) 
+  | Char e ->"#\\" ^ (list_to_string [e]) 
   | String e ->  "\"" ^e ^ "\""
   | Symbol e -> e
   | Pair (e1,e2) ->  
@@ -171,36 +171,6 @@ let nt_int =
   let nt = caten nt nt' in
   let nt = pack nt (fun (mult, n) -> (mult * n)) in
   nt;;
-
-
-let nt_nat =
-  let nt = range '1' '9' in
-  let nt = pack nt (make_char_value '0' 0) in
-  let nt' = range '0' '9' in
-  let nt' = pack nt' (make_char_value '0' 0) in
-  let nt' = star nt' in
-  let nt = caten nt nt' in
-  let nt = pack nt (fun (d, ds) -> (d :: ds)) in
-  let nt = pack nt (fun s -> List.fold_left (fun a b -> a * 10 + b) 0 s) in
-  let nt' = char '0' in
-  let nt'' = char '0' in
-  let nt''' = range '0' '9' in
-  let nt'' = caten nt'' nt''' in
-  let nt' = diff nt' nt'' in
-  let nt' = pack nt' (fun e -> 0) in
-  let nt = disj nt nt' in
-  nt;;
-
-
-let nt_uhex =
-  let nt_pref = word_ci "0x" in
-  let nt_bdy = one_of_ci "abcdef" in
-  let nt_nums = range '0' '9' in
-  let nt = caten nt_pref (plus (disj nt_bdy nt_nums)) in
-  let nt = pack nt (fun (_,ls) ->
-                      "0x" ^ (list_to_string ls)) in
-  let nt = pack nt int_of_string in
-nt;;
  
 let nt_hex = 
   let nt_m = char '-' in
@@ -227,10 +197,6 @@ let nt_hex =
 let nt_scm_int =
   pack (disj nt_hex nt_int) (fun x-> Int x);;
 
-
-let nt_scm_uint =
-  pack (disj nt_uhex nt_nat) (fun x-> Int x);;
-
 let get_int_val = function
   | Int x -> x 
   | _ -> raise (err "get val defined only for ints");;
@@ -242,7 +208,7 @@ let rec gcd a b =
 let nt_fract = 
   let nt_numer = nt_scm_int in
   let nt_slash = char '/' in 
-  let nt_denom = nt_scm_uint in
+  let nt_denom = nt_scm_int in
   pack (caten nt_numer (caten nt_slash nt_denom)) 
        (fun (a,(_,b)) -> 
           let a,b = get_int_val a, get_int_val b in
@@ -468,6 +434,7 @@ let rec process_scheme_list s ret_nil ret_one ret_several =
 
 (*converts a Pair proper list into a list of sexpressions*)
 let rec pair_to_list = function
+  | Nil -> []
   | Pair(e1,Nil) -> [e1] 
   | Pair(e1, Pair (x,y) ) -> e1 ::pair_to_list (Pair (x,y))
   | _ -> raise (err "pair_to_list, last case")
@@ -595,21 +562,12 @@ let rec expand_cond = function
      Pair(Pair(Symbol "begin",es),Pair((expand_cond xs),Nil))))  
   | _ -> raise (err "Probably not a cond expression ;(")
  
-(*
-let rec expand_cond = function 
-  | [] ->raise  (err "expanding empty cond")
-  | [Pair(Symbol "else",Pair(e1,Nil))] -> e1
-  | [Pair(test,Pair(e1,Nil))] -> 
-     Pair (Symbol "if", Pair (test, Pair (e1, Nil))) 
-  | Pair(test,Pair(e1,Nil)) :: xs ->
-    Pair(Symbol "if", Pair (test, Pair (e1,Pair((expand_cond xs), Nil))))   
-  | _ -> raise (err "Probably not a cond expression ;(")
-*)
- (*Expanding le let*)
+
 
 
 (* we map f on the args *)
 let expand_let args bdy f =
+  debug "in expand let";
   let args = pair_to_list args in
   let args_vals = List.map pair_to_list args in 
   let params = List.map (function 
@@ -633,7 +591,7 @@ let rec expand_and = function
        Pair (Bool false, Nil))))  
  (*checks if a given pair , is a proper list*)
 let rec is_proper = function
-  | Pair(_,Nil) -> true
+  | Pair(_,Nil)  | Nil-> true
   | Pair(_,Pair(x,y)) -> is_proper (Pair (x,y))
   | _ -> false;;
 
@@ -655,7 +613,7 @@ let rec tag_parse = function
 
   (*dealing with quotes*)
   |Pair (Symbol "quote", Pair(e,Nil))  -> Const e 
-  |(Pair (Symbol "unquote", Pair(e,Nil))) -> Const e 
+  |(Pair (Symbol "unquote", Pair(e,Nil))) -> raise X_syntax_error 
   |Pair (Symbol "quasiquote", Pair(e,Nil)) -> tag_parse (expand_qq e) 
  
 (*Dealing with defines*)
