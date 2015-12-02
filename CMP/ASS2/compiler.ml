@@ -77,7 +77,13 @@ let rec starts_with_paren = function
 ;;
   
 
-
+let char_of_string = function
+  | '\n' -> "newline"
+  | '\r' -> "return"
+  | '\t' -> "tab"
+  | '\012' -> "page"
+  | ' ' -> "space"
+  | e -> list_to_string [e]
 
 let rec sexpr_to_string = function
   | Void -> "void"
@@ -88,7 +94,7 @@ let rec sexpr_to_string = function
             | Fraction {numerator=a;denominator=b} ->
                 (string_of_int a) ^ "/" ^ (string_of_int b))
 
-  | Char e ->"#\\" ^ (list_to_string [e]) 
+  | Char e ->"#\\" ^ char_of_string e 
   | String e ->  "\"" ^e ^ "\""
   | Symbol e -> e
   | Pair (e1,e2) ->  
@@ -550,6 +556,12 @@ let rec expand_qq sexpr = match sexpr with
 
 
 
+let create_body f = function
+  | [] -> Const Void
+  | x::[] -> f x
+  | xs -> Seq (List.map f xs)
+
+
 let rec expand_cond = function 
   | [] ->raise  (err "expanding empty cond")
   | [Pair(Symbol "else",e1)] -> Pair(Symbol "begin",e1)
@@ -567,7 +579,6 @@ let rec expand_cond = function
 
 (* we map f on the args *)
 let expand_let args bdy f =
-  debug "in expand let";
   let args = pair_to_list args in
   let args_vals = List.map pair_to_list args in 
   let params = List.map (function 
@@ -575,8 +586,8 @@ let expand_let args bdy f =
                          | _ -> raise (err "error let expand. in map"))
                        args_vals in
   let args = List.map (fun ls -> List.nth ls 1) args_vals in
-  let bdy = List.map f (pair_to_list bdy) in
-  let lambda = LambdaSimple(params, Seq bdy) in
+  let bdy = create_body f (pair_to_list bdy) in
+  let lambda = LambdaSimple(params,  bdy) in
   Applic (lambda, (List.map f args));; 
 
 
@@ -641,8 +652,7 @@ let rec tag_parse = function
 
 
   |Pair (Symbol "lambda", Pair (ls, bdy)) -> 
-      let bdy = List.map tag_parse (pair_to_list bdy) in
-      let bdy = Seq bdy in
+      let bdy = create_body tag_parse (pair_to_list bdy) in
       if is_proper ls then 
         let args = pair_to_list ls in
         let args = List.map get_sym args in
@@ -685,13 +695,10 @@ let rec tag_parse = function
 
   |Pair (Symbol "set!", Pair(Symbol var,exp)) ->
       let var = make_var var in
-      let bdy = List.map tag_parse (pair_to_list exp) in
-      let bdy = Seq bdy in
+      let bdy = create_body tag_parse (pair_to_list exp) in
       Set(var,bdy)
   |Pair (Symbol "begin", bdy) -> 
-      if bdy = Nil then Const Void else
-      let bdy = List.map tag_parse (pair_to_list bdy) in
-      Seq bdy
+      create_body tag_parse (pair_to_list bdy) 
   (*Application shit*)
   |Pair ( func , args) -> 
       Applic (tag_parse func,
@@ -708,7 +715,7 @@ let cat_space a b = a ^ " " ^ b;;
 
 
 let rec expression_to_string = function 
-  |Const Void -> "(void)"
+  |Const Void -> ""
   |Const Nil -> "'()"
   |Const ((Pair (_,_)) as a) | Const ((Symbol _) as a)
              -> "'" ^ Sexpr.sexpr_to_string a
@@ -720,12 +727,12 @@ let rec expression_to_string = function
       "(if " ^ test ^ " " ^ dit ^ " " ^ dif ^ ")"
   |Seq es -> 
     let strs = List.map expression_to_string es in
-
-     if (List.length strs) = 1 then
-       List.hd strs
-     else
-
+    (match strs with
+     | [] ->  expression_to_string (Const Void)
+     | x::[]-> List.hd strs
+     | _ ->
     "(begin " ^(List.fold_right cat_space strs ")") 
+    )
   |Set (e1,e2) -> 
     let e1,e2 = expression_to_string e1, expression_to_string e2 in
     "(set! " ^ e1 ^ " " ^ e2 ^ ")"
@@ -738,14 +745,14 @@ let rec expression_to_string = function
   |LambdaSimple (params,bdy) ->   
     let params,bdy=List.fold_right cat_space params "",
                        expression_to_string bdy in
-    "(lambda (" ^ params ^")" ^ bdy ^")"
+    "(lambda (" ^ params ^") " ^ bdy ^")"
   |LambdaOpt ([], v,bdy) ->
-     "(lambda " ^ v ^ (expression_to_string bdy) ^ ")"
+     "(lambda " ^ v ^ " " ^ (expression_to_string bdy) ^ ")"
   |LambdaOpt (params,v,bdy) -> 
     let params,bdy=List.fold_right cat_space params "",
                  expression_to_string bdy in
     let params = params ^ " . " ^ v in
-    "(lambda (" ^ params ^")" ^ bdy ^")"
+    "(lambda (" ^ params ^") " ^ bdy ^")"
   |Applic (op, args) ->
       let op,args = expression_to_string op,
                     List.map expression_to_string args in
