@@ -10,7 +10,7 @@ exception X_not_yet_implemented;;
 exception X_this_should_not_happen;;
 exception X_error of string;; 
 let err str = X_error str;;
-let debug str = Printf.printf "DEBUG: %s\n" str;;
+
 let rec ormap f s =
   match s with
   | [] -> false
@@ -77,13 +77,7 @@ let rec starts_with_paren = function
 ;;
   
 
-let char_of_string = function
-  | '\n' -> "newline"
-  | '\r' -> "return"
-  | '\t' -> "tab"
-  | '\012' -> "page"
-  | ' ' -> "space"
-  | e -> list_to_string [e]
+
 
 let rec sexpr_to_string = function
   | Void -> "void"
@@ -94,8 +88,8 @@ let rec sexpr_to_string = function
             | Fraction {numerator=a;denominator=b} ->
                 (string_of_int a) ^ "/" ^ (string_of_int b))
 
-  | Char e ->"#\\" ^ char_of_string e 
-  | String e ->  "\"" ^e ^ "\""
+  | Char e -> "#\\" ^ (list_to_string [e]) 
+  | String e -> e
   | Symbol e -> e
   | Pair (e1,e2) ->  
       let e1 = "(" ^ (sexpr_to_string e1) ^ " " in
@@ -109,16 +103,14 @@ let rec sexpr_to_string = function
         e1 ^ "." ^ (sexpr_to_string e2) ^ ")"
   | Vector ls ->
       let bdy = List.map sexpr_to_string ls in
-      let bdy = List.fold_right (fun a b -> a ^ " " ^ b)  
-                bdy "" in
-      "#(" ^ bdy ^ ")";;
+      let bdy = List.fold_right (^) bdy "" in
+      "#( " ^ bdy ^ ")";;
             
 end;; (* struct Sexpr *)
 
 module type PARSER = sig
   val read_sexpr : string -> sexpr
   val read_sexprs : string -> sexpr list
-
 end;;
 
 module Parser : PARSER = struct
@@ -137,7 +129,7 @@ let nt_sk_wh =
   pack nt (fun x -> Nil);;
 let nt_line_comment =
   let nt_semi = char ';' in
-  let nt_nline = disj (char '\n') (pack nt_end_of_input (fun _ -> '\n'))  in
+  let nt_nline = char '\n' in
   let nt = caten nt_semi (star (diff nt_any nt_nline)) in
   let nt = caten nt nt_nline in 
   pack nt (fun x -> Nil)
@@ -169,6 +161,7 @@ let nt_int =
   let nt = disj nt nt' in
   let nt = maybe nt in
   let nt = pack nt (function | None -> 1 | Some(mult) -> mult) in
+  
   let nt' = range '0' '9' in
   let nt' = pack nt' (make_char_value '0' 0) in
   let nt' = plus nt' in
@@ -178,65 +171,58 @@ let nt_int =
   let nt = pack nt (fun (mult, n) -> (mult * n)) in
   nt;;
  
-let nt_hex = 
-  let nt_m = char '-' in
-  let nt_m' = pack nt_m (fun e -> -1) in
-  let nt_p = char '+' in
-  let nt_p' = pack nt_p (fun e -> 1) in
-  let nt_sign = disj nt_m' nt_p' in
-  let nt_sign = maybe nt_sign in
-  let nt_sign = pack nt_sign (function | None -> 1 | Some(mult) -> mult) in
-  let nt_pref = word_ci "0x" in
-  let nt_bdy = one_of_ci "abcdef" in
-  let nt_nums = range '0' '9' in
-  let nt = caten nt_pref (plus (disj nt_bdy nt_nums)) in
-  let nt = pack nt (fun (_,ls) ->
-                      "0x" ^ (list_to_string ls)) in
-  let nt = pack nt int_of_string in
-  let nt = caten nt_sign nt in
-  let nt = pack nt (fun (mult, n) -> (mult * n)) in
+
+let nt_nat =
+  let nt = range '1' '9' in
+  let nt = pack nt (make_char_value '0' 0) in
+  let nt' = range '0' '9' in
+  let nt' = pack nt' (make_char_value '0' 0) in
+  let nt' = star nt' in
+  let nt = caten nt nt' in
+  let nt = pack nt (fun (d, ds) -> (d :: ds)) in
+  let nt = pack nt (fun s -> List.fold_left (fun a b -> a * 10 + b) 0 s) in
+  let nt' = char '0' in
+  let nt'' = char '0' in
+  let nt''' = range '0' '9' in
+  let nt'' = caten nt'' nt''' in
+  let nt' = diff nt' nt'' in
+  let nt' = pack nt' (fun e -> 0) in
+  let nt = disj nt nt' in
   nt;;
 
 
 (*END OF MAYER INT and NAT*)
 
 let nt_scm_int =
-  pack (disj nt_hex nt_int) (fun x-> Int x);;
-
-let get_int_val = function
-  | Int x -> x 
-  | _ -> raise (err "get val defined only for ints");;
-
-
-let rec gcd a b =
-    if b = 0 then a else gcd b (a mod b);;
-
+  pack nt_int (fun x-> Int x);;
+let nt_scm_uint =
+  pack nt_nat (fun x -> Int x);;
+(*now we want create a parser for the fractions *)
+(* fractions have num/denom, where
+ * num -> int
+ * denom ->uint*)
+(* may need to ignore 0 here... *)
+(*may need to add hexa? fuck*)
 let nt_fract = 
-  let nt_numer = nt_scm_int in
+  let nt_numer = nt_int in
   let nt_slash = char '/' in 
-  let nt_denom = nt_scm_int in
+  let nt_denom = nt_nat in
   pack (caten nt_numer (caten nt_slash nt_denom)) 
        (fun (a,(_,b)) -> 
-          let a,b = get_int_val a, get_int_val b in
-          if b < 1 
-            then raise (err "X_invalid_fraction") 
-          else
-          let d = gcd a b in 
-          let numerator = a/d in
-          let denominator = b/d in
-          if denominator = 1 then Int numerator else
-          (Fraction {numerator ; denominator}));;
+          let numerator = a in
+          let denominator = b in
+         Fraction {numerator ; denominator});;
 (*now we combine to create nt_number *)
 let nt_number =
- let nt = pack (disj nt_fract nt_scm_int) (fun x -> Number x) in
- nt;;
+  pack (disj nt_fract nt_scm_int) (fun x -> Number x) ;;
+
 
 (*Now we need to write a parser for le scheme symbols - 3.2.3*)
 let nt_symbol =
-  let nt_lowercase = pack (range 'A' 'Z') Char.lowercase in
-  let nt_uppercase = range 'a' 'z' in
+  let nt_lowercase = pack (range 'a' 'z') Char.uppercase in
+  let nt_uppercase = range 'A' 'Z' in
   let nt_digits = range '0' '9' in
-  let nt_punctuation = disj_list[(char '!');(char '$');(char '^');
+  let nt_punctuation=disj_list[(char '!');(char '$');(char '^');
                               (char '^');(char '*');(char '-');
                               (char '_');(char '=');(char '+');
                               (char '<');(char '>');(char '/');
@@ -244,28 +230,22 @@ let nt_symbol =
   let nt_part_of_symbol = disj_list[nt_lowercase;nt_uppercase;nt_digits;
                                      nt_punctuation] in
   let nt_body_of_symbol = plus nt_part_of_symbol in
-  pack nt_body_of_symbol (fun b -> 
-   try let (e,s) = nt_number b in 
-      (match s with 
-        | [] -> e 
-        | _ -> 
-            Symbol (list_to_string b) )
-    with X_no_match -> Symbol(list_to_string b)) ;;
+ (* let nt_symbol = caten (char ''') nt_body_of_symbol in*)
+  pack nt_body_of_symbol (fun b -> Symbol (list_to_string b));;
 
-
- 
+(*Now we deal with a parser for String - 3.2.4*)
+(*NEED TO DEAL WITH META CHARACTERS*)
 let nt_string =
   let nt_quote = char '"' in
   let meta_characters=[(1,(word "\\n"));(2,(word "\\r"));
                         (3,(word "\\t"));(4,(word "\\\\"));
-                        (5,(word "\\\"")) ;(6, (word "\\f"))] in
+                        (5,(word "\\\"")) ] in
   let meta_characters = List.map (function
     | (1,e) -> pack e (fun _ -> '\n')
     | (2,e) -> pack e (fun _ -> '\r')
     | (3,e) -> pack e (fun _ -> '\t')
     | (4,e) -> pack e (fun _ -> '\\')
     | (5,e) -> pack e (fun _ -> '\"')
-    | (6,e) -> pack e (fun _ -> '\012')
     | _ -> raise (err "meta characters error")) meta_characters in
   let nt_meta = disj_list meta_characters in
   let nt_m_any = diff nt_any nt_meta in
@@ -275,15 +255,25 @@ let nt_string =
      in
   pack nt_string (fun (_,(s,_)) ->String (list_to_string s));;
               
+(*String not good*)
 
+(*Now we do the Char parser *)
 let nt_char = 
   let nt_prefix = word "#\\" in
-  let foo word charval = pack (word_ci word) (fun _ -> Char charval) in
   let nt_named_chars = disj_list
-                         [foo "newline" '\n';(foo "return" '\r');
-                         (foo "tab" '\t');(foo "page" (Char.chr 12) );
-                         (foo "space" ' ')] 
-                       in
+                         [(word_ci "newline");(word_ci "return");
+                         (word_ci "tab");(word_ci "page"); 
+                         (word_ci "lambda")] in
+  let nt_named_chars = pack nt_named_chars 
+    (fun s -> match (list_to_string s) with
+      "newline" -> Char '\n'
+    | "return" ->  Char '\r'
+    | "tab" -> Char (Char.chr 12)  
+    | "lambda"  -> Char (Char.chr 12)  
+    | _ -> Char 'x'
+    ) 
+  
+  in
     
   let nt_visible_chars = const (fun x -> x > ' ') in
   let nt_visible_chars = pack nt_visible_chars (fun x -> Char x) in
@@ -309,9 +299,11 @@ let ign = const (fun _ ->false);;
 let nt_sexpr =
   let rec make()=
     let nt_lb,nt_rb = add_skip ign (char '('), add_skip ign (char ')') in
+    let rec exp () =
+      let expr = plus (delayed make) in
+      pack (caten nt_lb (caten expr nt_rb)) (fun (_,(ls,_)) -> ls) 
 
-
-    let rec nt_pair = 
+    and nt_pair = 
      let nt_lb,nt_rb = add_skip (delayed make)  (char '('),
                         add_skip (delayed make) (char ')') in 
      let nt_sexpr = delayed make in
@@ -366,9 +358,9 @@ let nt_sexpr =
 
     in 
      let test = delayed make in
-     let lst =  [nt_void;nt_bool;nt_nil;nt_symbol;
+     let lst =  [nt_void;nt_bool;nt_nil;
                 nt_number;nt_string;
-                nt_pair;nt_vector;nt_char;nt_quote] in
+                nt_pair;nt_symbol;nt_vector;nt_char;nt_quote] in
      disj_list (List.map (add_skip test) lst)  
   in
   make();;
@@ -377,20 +369,10 @@ let nt_sexpr =
 let read_sexpr str =
   let str = string_to_list str in
   match (nt_sexpr str) with
-  |(a,[]) -> a 
+  |(a,_) -> a 
   | _ -> raise (err "did not fully parse") 
 
-let read_sexprs string = 
-  let rec read_exps acc charlst =
-   let (e,s) = nt_sexpr charlst in 
-   let acc = e :: acc in
-   (match s with 
-   | [] -> acc
-   | _ ->read_exps acc s
-  )
-  in
-  let charlst = (string_to_list string) in
-  read_exps [] charlst;;
+let read_sexprs string = raise X_not_yet_implemented;;
 
 end;;
 
@@ -417,7 +399,6 @@ module type TAG_PARSER = sig
   val read_expression : string -> expr
   val read_expressions : string -> expr list
   val expression_to_string : expr -> string
-  val tag_parse : sexpr -> expr
 end;; (* signature TAG_PARSER *)
 
 module Tag_Parser : TAG_PARSER = struct
@@ -437,25 +418,7 @@ let rec process_scheme_list s ret_nil ret_one ret_several =
 			 (fun sexpr' -> ret_several [sexpr; sexpr'])
 			 (fun sexprs -> ret_several (sexpr :: sexprs))
   | _ -> raise X_syntax_error;;
-
-(*converts a Pair proper list into a list of sexpressions*)
-let rec pair_to_list = function
-  | Nil -> []
-  | Pair(e1,Nil) -> [e1] 
-  | Pair(e1, Pair (x,y) ) -> e1 ::pair_to_list (Pair (x,y))
-  | _ -> raise (err "pair_to_list, last case")
-;;
-(* Given an improper list (l1.end) we return the pair l1 where l1 is a
- * list of sexpresions and end is the last element in such list*)
-
-let rec improper_to_list acc = function
-  | Pair(e1,Pair(x,y)) -> improper_to_list (e1 :: acc) (Pair(x,y))
-  | Pair(e1,e2) -> 
-      let acc = e1 :: acc in
-      (List.rev acc,e2) 
-  | (Symbol _) as s -> ([],s)
-  | _  -> raise (err "improper_to_list invoked on non pair");;
-
+  
 let scheme_list_to_ocaml_list args = 
   process_scheme_list args
 		      (fun () -> [])
@@ -553,222 +516,75 @@ let rec expand_qq sexpr = match sexpr with
   | Nil | Symbol _ -> (Pair((Symbol("quote")), (Pair(sexpr, Nil))))
   | expr -> expr;;
 
-
-
-
-let create_body f = function
-  | [] -> Const Void
-  | x::[] -> f x
-  | xs -> Seq (List.map f xs)
-
-
-let rec expand_cond = function 
-  | [] ->raise  (err "expanding empty cond")
-  | [Pair(Symbol "else",e1)] -> Pair(Symbol "begin",e1)
-  | [Pair(test,e1)] -> 
-     Pair (Symbol "if", Pair (test, Pair (Pair(Symbol "begin", e1), Nil))) 
-  | Pair(test,Pair(e1,Nil)) :: xs ->
-    Pair(Symbol "if", Pair (test, Pair (e1,Pair((expand_cond xs), Nil))))
-  | Pair(test,es) :: xs ->
-    Pair(Symbol "if", Pair(test,
-     Pair(Pair(Symbol "begin",es),Pair((expand_cond xs),Nil))))  
-  | _ -> raise (err "Probably not a cond expression ;(")
- 
-
-
-
-(* we map f on the args *)
-let expand_let args bdy f =
-  let args = pair_to_list args in
-  let args_vals = List.map pair_to_list args in 
-  let params = List.map (function 
-                         | [Symbol x ; _]  -> x
-                         | _ -> raise (err "error let expand. in map"))
-                       args_vals in
-  let args = List.map (fun ls -> List.nth ls 1) args_vals in
-  let bdy = create_body f (pair_to_list bdy) in
-  let lambda = LambdaSimple(params,  bdy) in
-  Applic (lambda, (List.map f args));; 
-
-
- 
-let rec expand_and = function
-  | [] -> Bool true
-  | x :: [] -> x
-  | x :: y ::  []  -> 
-     Pair (Symbol "if", Pair (x, Pair (y, Pair (Bool false, Nil))))  
-  | x :: xs ->
-      Pair (Symbol "if", Pair (x, Pair (expand_and xs,
-       Pair (Bool false, Nil))))  
- (*checks if a given pair , is a proper list*)
+(*checks if a given pair , is a proper list*)
 let rec is_proper = function
-  | Pair(_,Nil)  | Nil-> true
+  | Pair(_,Nil) -> true
   | Pair(_,Pair(x,y)) -> is_proper (Pair (x,y))
   | _ -> false;;
 
+(*converts a Pair proper list into a list of sexpressions*)
+let rec pair_to_list = function
+  | Pair(e1,Nil) -> [e1] 
+  | Pair(e1, Pair (x,y) ) -> e1 ::pair_to_list (Pair (x,y))
+  | _ -> raise (err "pair_to_list, last case")
+;;
+(* Given an improper list (l1.end) we return the pair l1 where l1 is a
+ * list of sexpresions and end is the last element in such list*)
 
-let get_sym = (function |Symbol str -> str 
-                         |_->raise (err "Non symbol in lambda args")) ;; 
-
-let make_var v =
-  if List.mem v reserved_word_list then
-    raise X_syntax_error
-  else
-    Var v;;
+let rec improper_to_list acc = function
+  | Pair(e1,Pair(x,y)) -> improper_to_list (e1 :: acc) (Pair(x,y))
+  | Pair(e1,e2) -> 
+      let acc = e1 :: acc in
+      (List.rev acc,e2) 
+  | (Symbol _) as s -> ([],s)
+  | _  -> raise (err "improper_to_list invoked on non pair");;
 
 let rec tag_parse = function
-  (*first couple are the cases, where we have plain Consts *)
-  |(Char _) as c -> Const c   | (Number _) as n -> Const n
-  |(Bool _) as b ->Const b    | Nil -> Const Nil
-  |(String _) as s -> Const s | Void -> Const Void 
-
-  (*dealing with quotes*)
-  |Pair (Symbol "quote", Pair(e,Nil))  -> Const e 
-  |(Pair (Symbol "unquote", Pair(e,Nil))) -> raise X_syntax_error 
-  |Pair (Symbol "quasiquote", Pair(e,Nil)) -> tag_parse (expand_qq e) 
- 
-(*Dealing with defines*)
-  (*what happens if we have a list of expressions in the body...?*) 
-
-
-
-  |Pair (Symbol "define", Pair (Pair (Symbol func, ls),bdy))  ->
-      let expr = tag_parse (Pair (Symbol "lambda", Pair (ls, bdy))) in
-      Def (make_var func,expr)
-
-
-  |(Pair((Symbol("define")), (Pair((Symbol(var)),
-   (Pair( exp, Nil)))))) -> Def ( make_var var, tag_parse exp)
+  | (Char _) as c -> Const c | (Number _) as n -> Const n 
+  | (Bool _) as b ->Const b | (String _) as s -> Const s | Void -> Const Void 
+  | Pair (Symbol "quote", Pair (e,Nil)) -> Const e 
+  | Pair (Symbol "unquote", Pair (e,Nil)) -> Const e 
+  |(Pair((Symbol("DEFINE")), (Pair((Symbol(var)),
+   (Pair( exp, Nil)))))) -> Def ( Var var, tag_parse exp)
   (*need to check var against list of reserved words*)
-
-
-
-
-  |(Pair((Symbol("if")), (Pair(test, (Pair(dit, (Pair(dif, Nil)))))))) ->
-       If (tag_parse test, tag_parse dit, tag_parse dif)
-  |(Pair((Symbol("if")), (Pair(test, (Pair(dit, Nil)))))) ->
+  |(Pair((Symbol("IF")), (Pair(test, (Pair(dit, (Pair(dif, Nil)))))))) ->
+  If (tag_parse test, tag_parse dit, tag_parse dif)
+  |(Pair((Symbol("IF")), (Pair(test, (Pair(dit, Nil)))))) ->
       If(tag_parse test,tag_parse dit, tag_parse Void)
-
-
-
-  |Pair (Symbol "lambda", Pair (ls, bdy)) -> 
-      let bdy = create_body tag_parse (pair_to_list bdy) in
+  |Pair (Symbol "LAMBDA", Pair (ls, Pair(bdy,Nil))) -> 
+      let get_sym = (function |Symbol str -> str 
+                             |_->raise (err "Non symbol in lambda")) in
       if is_proper ls then 
         let args = pair_to_list ls in
         let args = List.map get_sym args in
-        LambdaSimple (args, bdy)
+        LambdaSimple (args, tag_parse bdy)
       else
         let (args,variadic) = improper_to_list [] ls in
         let args = List.map get_sym args in
         let variadic = get_sym variadic in
-        LambdaOpt (args, variadic, bdy)
+        LambdaOpt (args, variadic, tag_parse bdy)
 
   (*Or expression*)
-  |Pair (Symbol "or", ls) ->
-      if ls = Nil then Const (Bool false) else
+  |Pair (Symbol "OR", ls) ->
       let exprls = List.map tag_parse (pair_to_list ls) in
-      (match exprls with
-      | [] -> raise (err "empty list in or") 
-      | [x] -> x
-      | _ -> Or exprls
-      )
-  (*cond shiz*)
-  |Pair (Symbol "cond", ls) -> tag_parse (expand_cond (pair_to_list ls))
+      Or exprls
 
-  |Pair (Symbol "and", ls) -> 
-      let ls = if ls = Nil then [] else (pair_to_list ls) in
-      tag_parse (expand_and ls)
-    
-     (*dealign with let *)
-
-  |Pair (Symbol "let", Pair (ls, bdy))  -> 
-       expand_let ls bdy tag_parse 
-
-  (*dealing with let star *)
-  |Pair (Symbol "let*", Pair (ls, bdy))  -> 
-      tag_parse (expand_let_star ls bdy)
-
-    (*dealing with let rec *)
-  |Pair (Symbol "letrec", Pair (ls, bdy))  -> 
-      tag_parse (expand_letrec ls bdy)
-
-
-  |Pair (Symbol "set!", Pair(Symbol var,exp)) ->
-      let var = make_var var in
-      let bdy = create_body tag_parse (pair_to_list exp) in
-      Set(var,bdy)
-  |Pair (Symbol "begin", bdy) -> 
-      create_body tag_parse (pair_to_list bdy) 
   (*Application shit*)
-  |Pair ( func , args) -> 
+  | Pair (func, args) ->
       Applic (tag_parse func,
             List.map tag_parse (pair_to_list args))
-  |Symbol s -> make_var s
-  |Vector v -> raise X_syntax_error
-    
+ (* |  _ -> Const (Symbol "not yet") *)
 ;;
 let read_expression string = tag_parse (Parser.read_sexpr string);;
 
 let read_expressions string = List.map tag_parse (Parser.read_sexprs string);;
 
-let cat_space a b = a ^ " " ^ b;;
-
-
-let rec expression_to_string = function 
-  |Const Void -> ""
-  |Const Nil -> "'()"
-  |Const ((Pair (_,_)) as a) | Const ((Symbol _) as a)
-             -> "'" ^ Sexpr.sexpr_to_string a
-  |Const a -> Sexpr.sexpr_to_string a
-  |Var s -> s
-  |If (test,dit,dif) ->
-      let test,dit,dif = expression_to_string test, expression_to_string dit
-                 , expression_to_string dif in
-      "(if " ^ test ^ " " ^ dit ^ " " ^ dif ^ ")"
-  |Seq es -> 
-    let strs = List.map expression_to_string es in
-    (match strs with
-     | [] ->  expression_to_string (Const Void)
-     | x::[]-> List.hd strs
-     | _ ->
-    "(begin " ^(List.fold_right cat_space strs ")") 
-    )
-  |Set (e1,e2) -> 
-    let e1,e2 = expression_to_string e1, expression_to_string e2 in
-    "(set! " ^ e1 ^ " " ^ e2 ^ ")"
-  |Def (e1,e2) ->
-    let e1,e2 = expression_to_string e1, expression_to_string e2 in
-    "(define " ^ e1  ^ " " ^ e2 ^ ")"
-  |Or es -> 
-    let strs = List.map expression_to_string es in
-    "(or " ^ (List.fold_right cat_space strs "") ^ ")"
-  |LambdaSimple (params,bdy) ->   
-    let params,bdy=List.fold_right cat_space params "",
-                       expression_to_string bdy in
-    "(lambda (" ^ params ^") " ^ bdy ^")"
-  |LambdaOpt ([], v,bdy) ->
-     "(lambda " ^ v ^ " " ^ (expression_to_string bdy) ^ ")"
-  |LambdaOpt (params,v,bdy) -> 
-    let params,bdy=List.fold_right cat_space params "",
-                 expression_to_string bdy in
-    let params = params ^ " . " ^ v in
-    "(lambda (" ^ params ^") " ^ bdy ^")"
-  |Applic (op, args) ->
-      let op,args = expression_to_string op,
-                    List.map expression_to_string args in
-      let args = List.fold_right cat_space args "" in
-      "(" ^ op ^ " " ^ args ^ ")"
-  | _ -> raise (err "stuff not yet demanded to print")
-;;
- 
-
+let expression_to_string expr = raise X_not_yet_implemented;;
+  
 end;; (* struct Tag_Parser *)
 
 let test_parser string =
   let expr = Tag_Parser.read_expression string in
   let string' = (Tag_Parser.expression_to_string expr) in
   Printf.printf "%s\n" string';;
-
-
-
 
