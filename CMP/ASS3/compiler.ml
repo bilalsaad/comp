@@ -398,9 +398,6 @@ end;;
 type expr =
   | Const of sexpr
   | Var of string
-  | VarFree of string
-  | VarParam of string * int
-  | VarBound of string * int * int
   | If of expr * expr * expr
   | Seq of expr list
   | Set of expr * expr
@@ -409,7 +406,6 @@ type expr =
   | LambdaSimple of string list * expr
   | LambdaOpt of string list * string * expr
   | Applic of expr * (expr list)
-  | ApplicTP of expr * (expr list);;
 
 exception X_syntax_error;;
 
@@ -441,7 +437,7 @@ let rec process_scheme_list s ret_nil ret_one ret_several =
 (*converts a Pair proper list into a list of sexpressions*)
 let rec pair_to_list = function
   | Nil -> []
-  | Pair(e1,Nil) -> [e1] 
+  | Pair(e1,Nil) ->  [e1] 
   | Pair(e1, Pair (x,y) ) -> e1 ::pair_to_list (Pair (x,y))
   | _ -> raise (err "pair_to_list, last case")
 ;;
@@ -615,7 +611,69 @@ let make_var v =
     raise X_syntax_error
   else
     Var v;;
+let contains_nested_defines bdy = 
+  let rec helper = function
+    | [] -> false
+    | Pair(Symbol "define", _ ) :: _ -> true
+    | Pair(Symbol "begin", bdy) :: xs ->
+         if helper (pair_to_list bdy) then true
+         else helper xs
+    | x :: xs ->helper xs in
+  helper bdy
+;;
 
+
+let partition_around_defines bdy = 
+  (*we want to flatten the body of the list*)
+  let rec helper defines bdy = match bdy with
+    | [] -> (defines,bdy)
+    | Pair (Symbol "define", Pair (Pair (func, ls),bdy)) :: xs ->
+        let expr = Pair(Symbol "lambda",Pair (ls,bdy)) in
+        let bdy = Pair((Symbol "define", Pair(func, Pair(expr,Nil))))
+          :: xs in
+         helper defines bdy
+    |Pair(Symbol "define",dby)::xs ->
+      helper (dby :: defines) xs
+    | Symbol("begin") :: xs -> helper defines xs 
+    | Pair(Symbol "begin",bbdy) :: xs -> 
+        let sdefines,sbdy = helper defines (pair_to_list bbdy) in
+        (match sbdy with
+          | [] -> helper sdefines xs
+          | x -> 
+              (sdefines, (x@xs))
+        )
+    | _ -> (defines,bdy)
+  in
+  helper []  bdy
+;;
+(* a valid lambda is one s.t it's body gets partitioned into
+ * (s,d) s.t contains_nested_defines d -> false*)
+
+let transform_lambda_body bdy =  
+  let create_ribs defines = 
+    List.fold_right (fun a s -> Pair(a,s))
+    defines
+    Nil
+    in
+  let create_body tail =
+    List.fold_right (fun a s -> Pair(a,s))
+    tail
+    Nil 
+  in   
+  let bdy' = pair_to_list bdy in 
+  match (contains_nested_defines bdy') with
+ | false -> bdy
+ | true ->
+     let defines,tail =partition_around_defines bdy' in
+     (match contains_nested_defines tail with
+      |false ->  
+          let ribs,bdy = create_ribs (List.rev defines),create_body tail in
+           Pair(Pair(Symbol "letrec", Pair(ribs,bdy)),Nil)
+      |true -> raise (err "nested define in the middle of the body")
+     )
+;;
+    
+ 
 let rec tag_parse = function
   (*first couple are the cases, where we have plain Consts *)
   |(Char _) as c -> Const c   | (Number _) as n -> Const n
@@ -629,8 +687,6 @@ let rec tag_parse = function
  
 (*Dealing with defines*)
   (*what happens if we have a list of expressions in the body...?*) 
-
-
 
   |Pair (Symbol "define", Pair (Pair (Symbol func, ls),bdy))  ->
       let expr = tag_parse (Pair (Symbol "lambda", Pair (ls, bdy))) in
@@ -652,6 +708,7 @@ let rec tag_parse = function
 
 
   |Pair (Symbol "lambda", Pair (ls, bdy)) -> 
+      let bdy = transform_lambda_body bdy in
       let bdy = create_body tag_parse (pair_to_list bdy) in
       if is_proper ls then 
         let args = pair_to_list ls in
@@ -758,7 +815,6 @@ let rec expression_to_string = function
                     List.map expression_to_string args in
       let args = List.fold_right cat_space args "" in
       "(" ^ op ^ " " ^ args ^ ")"
-  | _ -> raise (err "stuff not yet demanded to print")
 ;;
  
 
@@ -771,4 +827,138 @@ let test_parser string =
 
 
 
+type var = 
+  | VarFree' of string
+  | VarParam' of string * int
+  | VarBound' of string * int * int;;
 
+type expr' =
+  | Const' of sexpr
+  | Var' of var
+  | Box' of var
+  | BoxGet' of var
+  | BoxSet' of var * expr'
+  | If' of expr' * expr' * expr'
+  | Seq' of expr' list
+  | Set' of expr' * expr'
+  | Def' of expr' * expr'
+  | Or' of expr' list
+  | LambdaSimple' of string list * expr'
+  | LambdaOpt' of string list * string * expr'
+  | Applic' of expr' * (expr' list)
+  | ApplicTP' of expr' * (expr' list);;
+
+
+
+module type SEMANTICS = sig
+  val run_semantics : expr -> expr'
+  val annotate_lexical_addresses : expr -> expr'
+  val annotate_tail_calls : expr' -> expr'
+  val box_set : expr' -> expr'
+end
+;;
+
+module Semantics : SEMANTICS = struct
+let range b =
+  let rec helper a = 
+    if a = b then [] 
+    else
+      a :: (helper (a+1)) in
+  helper 0;;
+  
+let create_assoc lst =
+  List.map2 (fun a b -> (a,b)) lst (range (List.length lst))
+;; 
+let annotate_lexical_addresses e = 
+  let rec run pvars bvars = function
+    | Const e -> Const' e
+    | If(test,dit,dif)->
+        If'(run pvars bvars test,
+            run pvars bvars dit,
+            run pvars bvars dif)
+    | Seq es->
+        Seq' (List.map (run pvars bvars) es) 
+    | Or es ->
+        Or' (List.map (run pvars bvars) es)
+    | Def (Var v,e) -> Def' (Var' (VarFree' v) , 
+                              run pvars bvars e)
+    | Set(v,e) -> Set' (run pvars bvars v, run pvars bvars e)
+    | LambdaSimple(strs,e) ->
+        let strs' = create_assoc strs in 
+        LambdaSimple'(strs, run strs' (pvars::bvars) e)
+    | LambdaOpt(strs,str,e) ->
+        let strs' = str :: strs in
+        let strs' = create_assoc strs' in
+        LambdaOpt' (strs,str, run strs' (pvars::bvars) e)
+    | Applic (func, args) ->
+        Applic' (run pvars bvars func, 
+                 List.map (run pvars bvars) args)
+    | Var e ->
+        let rec helper index =( function
+          | [] -> Var' (VarFree' e) 
+          | x ::xs -> if List.mem_assoc e x 
+                      then
+                        Var' (VarBound' (e,index,List.assoc e x))
+                      else 
+                        helper (index+1) xs
+                       )  in
+        if List.mem_assoc e pvars then
+          Var' (VarParam' (e, List.assoc e pvars))
+        else 
+          helper 0 bvars
+    | _ -> raise (err "missed a case in run wtf")     
+in              
+  run [] [] e
+
+;;
+
+
+
+let split = function
+  | [] -> raise (err "you cannot under any circumstances split an empty list")
+  | xs -> 
+      let xs' = List.rev xs in
+      (List.rev (List.tl xs'), List.hd xs') 
+;;
+let annotate_tail_calls e = 
+  let rec run intail = function
+    | (Const' _) as e -> e | (Var' _) as e -> e
+    | (Box' _) as e -> e | (BoxGet' _ ) as e -> e
+    | (BoxSet' _) as e -> e | (Def' _) as e -> e |(Set' _) as e -> e
+    | If'(test,dit,dif) ->
+        If'(run false test, run intail dit, run intail dif)
+    | Or' exprs -> 
+        let xs,last = split exprs in
+        Or' ((List.map (run false) xs) @ [run intail last])
+    | Seq' exprs ->
+        let xs,last = split exprs in
+        Seq' ((List.map (run false) xs) @ [run intail last])
+    | LambdaSimple' (params,bdy) ->
+        LambdaSimple'(params, run true bdy)
+    | LambdaOpt' (params,param,bdy) ->
+        LambdaOpt' (params,param, run true bdy)
+    | Applic' (func,args) ->
+        let func,args = (run false func, List.map (run false) args) in
+        if intail then 
+          ApplicTP' (func,args) 
+        else 
+          Applic' (func,args) 
+    | ApplicTP' _ ->
+        raise (err "How, in heavens name, did we manage to get here")
+
+
+
+
+  in
+
+  run false e;;
+
+   
+let box_set e =  e;;
+
+let run_semantics expr =
+  box_set
+    (annotate_tail_calls
+       (annotate_lexical_addresses expr));;
+  
+end;; (* struct Semantics *)
