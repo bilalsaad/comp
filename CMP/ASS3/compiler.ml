@@ -992,7 +992,8 @@ let box_set e =
     | Set' (_,_) -> raise (err "non variable in car of Set'")
   in
   let rec get_occur var = function
-    | Var' (VarParam' (v,_)) | Var'(VarBound' (v,_,_)) ->var=v 
+    | Var' (VarParam' (v,_)) -> false
+    | Var'(VarBound' (v,_,_)) ->var=v 
     | If'(test,dit,dif) -> (get_occur var) test || (get_occur var) dit ||
                            (get_occur var) dif
     | Or' exprs | Seq' exprs -> ormap (get_occur var) exprs 
@@ -1039,7 +1040,8 @@ let box_set e =
     
     | (Const' _) as e -> e | (Var' _) as e -> e
     | (Box' _) as e -> e | (BoxGet' _ ) as e -> e
-    | (BoxSet' _) as e -> e | (Def' _) as e -> e
+    | (BoxSet' _) as e -> e 
+    | Def' (v,e)  -> Def'(v, run to_change e)
     | If' (test,dit,dif) ->
         If' (run to_change test,
              run to_change dit,
@@ -1081,3 +1083,7 @@ let run_semantics expr =
        (annotate_lexical_addresses expr));;
   
 end;; (* struct Semantics *)
+
+
+let compose f g x = f (g x) ;;
+let tst = compose Semantics.run_semantics Tag_Parser.read_expression;;
