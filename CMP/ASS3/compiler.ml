@@ -924,7 +924,8 @@ let annotate_tail_calls e =
   let rec run intail = function
     | (Const' _) as e -> e | (Var' _) as e -> e
     | (Box' _) as e -> e | (BoxGet' _ ) as e -> e
-    | (BoxSet' _) as e -> e | (Def' _) as e -> e
+    | (BoxSet' _) as e -> e 
+    | Def' (v,e)  -> Def' (v, run false e)
     | Set' (v,e) -> Set' (v, run intail e)
     | If'(test,dit,dif) ->
         If'(run false test, run intail dit, run intail dif)
