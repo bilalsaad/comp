@@ -924,7 +924,8 @@ let annotate_tail_calls e =
   let rec run intail = function
     | (Const' _) as e -> e | (Var' _) as e -> e
     | (Box' _) as e -> e | (BoxGet' _ ) as e -> e
-    | (BoxSet' _) as e -> e | (Def' _) as e -> e |(Set' _) as e -> e
+    | (BoxSet' _) as e -> e | (Def' _) as e -> e
+    | Set' (v,e) -> Set' (v, run intail e)
     | If'(test,dit,dif) ->
         If'(run false test, run intail dit, run intail dif)
     | Or' exprs -> 
@@ -953,9 +954,126 @@ let annotate_tail_calls e =
 
   run false e;;
 
-   
-let box_set e =  e;;
 
+let create_body'  = function
+  | [] -> Const' Void
+  | x::[] -> x
+  | xs -> Seq' xs
+
+
+
+let get_var = function 
+  |VarFree' s -> s
+  |VarParam' (s,_) -> s
+  |VarBound' (s,_,_) -> s 
+;;  
+let box_set e =
+  let rec need_box var =
+    function 
+    | Const' _ | Var' _ | Box' _ | BoxGet' _ | BoxSet' _ | Def' _ -> false
+    | If'(test,dit,dif) ->
+        ( (need_box var) test) ||
+        ( (need_box var) dit) ||
+        ( (need_box var) dif)
+    | Or' exprs -> ormap  (need_box var) exprs 
+    | Seq' exprs -> ormap  (need_box var) exprs
+    | LambdaSimple'(params,bdy) -> 
+        if List.mem var params then false
+        else  (need_box var) bdy
+    | LambdaOpt' (params,param,bdy) -> (*not sure what to do amigo*)
+        if List.mem var (param::params) then false
+          else  (need_box var) bdy 
+    | Applic'(func,args) | ApplicTP'(func,args) ->
+        (need_box var) func || ormap  (need_box var) args 
+    | Set' (Var' v,e) ->
+        if (get_var v) = var then true
+        else need_box var e
+    | Set' (_,_) -> raise (err "non variable in car of Set'")
+  in
+  let rec get_occur var = function
+    | Var' (VarParam' (v,_)) | Var'(VarBound' (v,_,_)) ->var=v 
+    | If'(test,dit,dif) -> (get_occur var) test || (get_occur var) dit ||
+                           (get_occur var) dif
+    | Or' exprs | Seq' exprs -> ormap (get_occur var) exprs 
+    | LambdaSimple'(params,bdy) ->
+        if List.mem var params then false
+        else get_occur var bdy
+    | LambdaOpt' (params,param,bdy) ->
+        if List.mem var (param::params) then false
+        else get_occur var bdy
+    | Applic'(func,args) | ApplicTP'(func,args) -> 
+        get_occur var func || ormap (get_occur var) args
+    | Set'(_,e) -> get_occur var e
+    | _ -> false
+    
+  in 
+  let get_prefix params'  = 
+    let param_indexes = create_assoc params' in
+     List.map (fun (a,b) -> 
+         Set' (Var' (VarParam' (a,b)),Box' (VarParam' (a,b)))) param_indexes 
+  in
+  let rec run to_change = function 
+    | (Var' (VarParam' (v,n))) as e ->
+        if List.mem v to_change then
+          BoxGet' (VarParam' (v,n)) 
+        else e
+    | (Var' (VarBound' (v,m1,m2))) as e ->
+        if List.mem v to_change then
+          BoxGet' (VarBound' (v,m1,m2))
+        else e
+    | Set' (Var' x, e) -> 
+        (match x with
+          | VarBound' (v,m1,m2) -> 
+              if List.mem v to_change 
+                then BoxSet' (VarBound' (v,m1,m2) , run to_change e)
+                else Set'(Var' x, run to_change e)
+          | VarParam' (v,n) -> 
+              if List.mem v to_change
+              then 
+                BoxSet' (VarParam'(v,n), run to_change e)
+              else Set'(Var' x, run to_change e)
+          | _ -> Set'(Var' x, run to_change e)
+)
+    |Set' _ -> raise (err ("set with non var car"))            
+    
+    | (Const' _) as e -> e | (Var' _) as e -> e
+    | (Box' _) as e -> e | (BoxGet' _ ) as e -> e
+    | (BoxSet' _) as e -> e | (Def' _) as e -> e
+    | If' (test,dit,dif) ->
+        If' (run to_change test,
+             run to_change dit,
+             run to_change dif)
+    | Seq' exprs ->
+        Seq' (List.map (run to_change) exprs)
+    | Or' exprs ->
+        Or' (List.map (run to_change) exprs)
+    | Applic' (func,args) -> 
+        Applic' (run to_change func, (List.map (run to_change) args))
+    | ApplicTP' (func,args) ->
+        ApplicTP'(run to_change func, (List.map (run to_change) args))
+    | LambdaSimple' (params,bdy) ->
+        let to_change = 
+          List.filter (fun x -> not (List.mem x params)) to_change in
+        let params' = List.filter 
+          (fun x -> (need_box x bdy) && (get_occur x bdy)) params in
+        let prefix = get_prefix params' in
+        let bdy =   run (params' @ to_change) bdy in
+        let bdy = create_body' (prefix @ [bdy]) in
+        LambdaSimple'(params, bdy)
+    | LambdaOpt' (params,param,bdy) ->
+        let params' = param :: params in
+        let to_change =
+          List.filter (fun x -> not (List.mem x params')) to_change in
+        let params'' = List.filter 
+          (fun x -> (need_box x bdy) && (get_occur x bdy)) params' in
+        let prefix= get_prefix params'' in
+        let bdy =   run (params'' @ to_change) bdy in
+        let bdy = create_body' (prefix @ [bdy]) in
+        LambdaOpt'(params,param,bdy)
+  in run [] e
+
+
+;;
 let run_semantics expr =
   box_set
     (annotate_tail_calls
