@@ -992,8 +992,8 @@ let box_set e =
     | Set' (_,_) -> raise (err "non variable in car of Set'")
   in
   let rec get_occur var = function
-    | Var' (VarParam' (v,_))->var=v 
-    | Var'(VarBound' (v,_,_))->var=v 
+    | Var' (VarParam' (v,_)) ->var=v 
+    | Var'(VarBound' (v,_,_)) ->var=v 
     | If'(test,dit,dif) -> (get_occur var) test || (get_occur var) dit ||
                            (get_occur var) dif
     | Or' exprs | Seq' exprs -> ormap (get_occur var) exprs 
@@ -1012,29 +1012,24 @@ let box_set e =
   let rec bound_occur var = function
     | Var' (VarParam' (v,_)) ->false 
     | Var'(VarBound' (v,_,_)) ->var=v 
-    | If'(test,dit,dif) -> (bound_occur var) test || (bound_occur var) dit ||
-                           (bound_occur var) dif
-    | Or' exprs | Seq' exprs -> ormap (bound_occur var) exprs 
+    | If'(test,dit,dif) -> (get_occur var) test || (get_occur var) dit ||
+                           (get_occur var) dif
+    | Or' exprs | Seq' exprs -> ormap (get_occur var) exprs 
     | LambdaSimple'(params,bdy) ->
         if List.mem var params then false
-        else bound_occur var bdy
+        else get_occur var bdy
     | LambdaOpt' (params,param,bdy) ->
         if List.mem var (param::params) then false
-        else bound_occur var bdy
+        else get_occur var bdy
     | Applic'(func,args) | ApplicTP'(func,args) -> 
-        bound_occur var func || ormap (bound_occur var) args
-    | Set'(v ,e) ->  bound_occur var e
-    | _ -> false 
-  in
+        get_occur var func || ormap (get_occur var) args
+    | Set'(v ,e) -> bound_occur var v || get_occur var e
+    | _ -> false
   let get_prefix params'  = 
     let param_indexes = create_assoc params' in
      List.map (fun (a,b) -> 
          Set' (Var' (VarParam' (a,b)),Box' (VarParam' (a,b)))) param_indexes 
   in
-  let needbox bdy = 
-   (fun x->(need_box x bdy)&&(get_occur x bdy)&&(bound_occur x bdy))         
-  in
-    
   let rec run to_change = function 
     | (Var' (VarParam' (v,n))) as e ->
         if List.mem v to_change then
@@ -1079,7 +1074,7 @@ let box_set e =
         let to_change = 
           List.filter (fun x -> not (List.mem x params)) to_change in
         let params' = List.filter 
-          (needbox bdy) params in
+          (fun x -> (need_box x bdy) && (get_occur x bdy)) params in
         let prefix = get_prefix params' in
         let bdy =   run (params' @ to_change) bdy in
         let bdy = create_body' (prefix @ [bdy]) in
@@ -1089,7 +1084,7 @@ let box_set e =
         let to_change =
           List.filter (fun x -> not (List.mem x params')) to_change in
         let params'' = List.filter 
-          (needbox bdy)  params' in
+          (fun x -> (need_box x bdy) && (get_occur x bdy)) params' in
         let prefix= get_prefix params'' in
         let bdy =   run (params'' @ to_change) bdy in
         let bdy = create_body' (prefix @ [bdy]) in
