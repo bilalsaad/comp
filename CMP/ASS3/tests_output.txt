@@ -1,0 +1,579 @@
+Regression tests. The last test message before an exception indicates which test failed.
+
+
+- : unit = ()
+-----Test 01: single nested define-----
+
+Scheme:
+(define foo (lambda (x) (define y 2) (+ x y)))
+
+- : unit = ()
+- : expr' =
+Def' (Var' (VarFree' "foo"),
+ LambdaSimple' (["x"],
+  ApplicTP'
+   (LambdaSimple' (["y"],
+     Seq'
+      [Set' (Var' (VarParam' ("y", 0)), Const' (Number (Int 2)));
+       ApplicTP' (Var' (VarFree' "+"), [Var' (VarBound' ("x", 0, 0)); Var' (VarParam' ("y", 0))])]),
+   [Const' (Bool false)])))
+-----Test 02: some nested define in implicit sequence-----
+
+Scheme:
+(define (foo x y z) (define t 2) (define r 9) (+ x y z t r))
+
+- : unit = ()
+- : expr' =
+Def' (Var' (VarFree' "foo"),
+ LambdaSimple' (["x"; "y"; "z"],
+  ApplicTP'
+   (LambdaSimple' (["t"; "r"],
+     Seq'
+      [Set' (Var' (VarParam' ("t", 0)), Const' (Number (Int 2)));
+       Set' (Var' (VarParam' ("r", 1)), Const' (Number (Int 9)));
+       ApplicTP' (Var' (VarFree' "+"),
+        [Var' (VarBound' ("x", 0, 0));
+         Var' (VarBound' ("y", 0, 1));
+         Var' (VarBound' ("z", 0, 2));
+         Var' (VarParam' ("t", 0));
+         Var' (VarParam' ("r", 1))])]),
+   [Const' (Bool false); Const' (Bool false)])))
+-----Test 03: nested define in explicit sequence-----
+
+Scheme:
+(define (foo x y z) (begin (define t 2) (define r 9)) (+ x y z t r))
+
+- : unit = ()
+- : expr' =
+Def' (Var' (VarFree' "foo"),
+ LambdaSimple' (["x"; "y"; "z"],
+  ApplicTP'
+   (LambdaSimple' (["t"; "r"],
+     Seq'
+      [Set' (Var' (VarParam' ("t", 0)), Const' (Number (Int 2)));
+       Set' (Var' (VarParam' ("r", 1)), Const' (Number (Int 9)));
+       ApplicTP' (Var' (VarFree' "+"),
+        [Var' (VarBound' ("x", 0, 0));
+         Var' (VarBound' ("y", 0, 1));
+         Var' (VarBound' ("z", 0, 2));
+         Var' (VarParam' ("t", 0));
+         Var' (VarParam' ("r", 1))])]),
+   [Const' (Bool false); Const' (Bool false)])))
+-----Test 04: twice-nested define in explicit sequence-----
+
+Scheme:
+(define (goo a b c . d) (begin (begin (define t1 1) (define t2 2)) (+ a b c c
+(car d) t2 t1)))
+
+- : unit = ()
+- : expr' =
+Def' (Var' (VarFree' "goo"),
+ LambdaOpt' (["a"; "b"; "c"], "d",
+  ApplicTP'
+   (LambdaSimple' (["t1"; "t2"],
+     Seq'
+      [Set' (Var' (VarParam' ("t1", 0)), Const' (Number (Int 1)));
+       Set' (Var' (VarParam' ("t2", 1)), Const' (Number (Int 2)));
+       ApplicTP' (Var' (VarFree' "+"),
+        [Var' (VarBound' ("a", 0, 0));
+         Var' (VarBound' ("b", 0, 1));
+         Var' (VarBound' ("c", 0, 2));
+         Var' (VarBound' ("c", 0, 2));
+         Applic' (Var' (VarFree' "car"), [Var' (VarBound' ("d", 0, 3))]);
+         Var' (VarParam' ("t2", 1));
+         Var' (VarParam' ("t1", 0))])]),
+   [Const' (Bool false); Const' (Bool false)])))
+-----Test 05: tree-nesting define-----
+
+Scheme:
+(define (goo . d) (begin (begin (begin (define t0 0) (define t1 1)) (define t2
+ 2)) (+ a b c c (car d) t2 t1)))
+
+- : unit = ()
+- : expr' =
+Def' (Var' (VarFree' "goo"),
+ LambdaOpt' ([], "d",
+  ApplicTP'
+   (LambdaSimple' (["t0"; "t1"; "t2"],
+     Seq'
+      [Set' (Var' (VarParam' ("t0", 0)), Const' (Number (Int 0)));
+       Set' (Var' (VarParam' ("t1", 1)), Const' (Number (Int 1)));
+       Set' (Var' (VarParam' ("t2", 2)), Const' (Number (Int 2)));
+       ApplicTP' (Var' (VarFree' "+"),
+        [Var' (VarFree' "a");
+         Var' (VarFree' "b");
+         Var' (VarFree' "c");
+         Var' (VarFree' "c");
+         Applic' (Var' (VarFree' "car"), [Var' (VarBound' ("d", 0, 0))]);
+         Var' (VarParam' ("t2", 2));
+         Var' (VarParam' ("t1", 1))])]),
+   [Const' (Bool false); Const' (Bool false); Const' (Bool false)])))
+-----Test 06: more complex tree-nesting define-----
+
+Scheme:
+
+((lambda (a b c)
+   (begin
+    (define t 1)
+     (begin
+       (begin
+         (define + *)
+         (define r -5/5)
+         (define hex 0xffff))))
+   (+ r hex r r t))
+  list car cdr)
+
+
+- : unit = ()
+- : expr' =
+Applic'
+ (LambdaSimple' (["a"; "b"; "c"],
+   ApplicTP'
+    (LambdaSimple' (["t"; "+"; "r"; "hex"],
+      Seq'
+       [Set' (Var' (VarParam' ("t", 0)), Const' (Number (Int 1))); 
+        Set' (Var' (VarParam' ("+", 1)), Var' (VarFree' "*"));
+        Set' (Var' (VarParam' ("r", 2)), Const' (Number (Int (-1))));
+        Set' (Var' (VarParam' ("hex", 3)), Const' (Number (Int 65535)));
+        ApplicTP' (Var' (VarParam' ("+", 1)),
+         [Var' (VarParam' ("r", 2));
+          Var' (VarParam' ("hex", 3));
+          Var' (VarParam' ("r", 2));
+          Var' (VarParam' ("r", 2));
+          Var' (VarParam' ("t", 0))])]),
+    [Const' (Bool false); Const' (Bool false); Const' (Bool false); Const' (Bool false)])),
+ [Var' (VarFree' "list"); Var' (VarFree' "car"); Var' (VarFree' "cdr")])
+-----Test 07: shouldn't pass - nested define after non-define expression-----
+
+Scheme:
+
+  ((lambda (a b c)
+     (begin
+      (define t 1)
+       (begin
+         (begin
+           (define + *)
+           (define r -5/5)
+           (define hex 0xffff))))
+     (+ r hex r r t)
+     (define k 8))
+   list car cdr)
+
+- : unit = ()
+-----Test 08: box craziness, explicit get/set/bound occurrences-----
+
+Scheme:
+
+(lambda (x)
+    (x (lambda (x)
+         (x (lambda (x y)
+              (x y (lambda (z)
+                      x
+                      y
+                     (set! z (/ z 2))
+                     (set! y 1)
+                     (set! x 3))))))
+       (set! x 5)))
+
+
+- : unit = ()
+- : expr' =
+LambdaSimple' (["x"],
+ ApplicTP' (Var' (VarParam' ("x", 0)),
+  [LambdaSimple' (["x"],
+    ApplicTP' (Var' (VarParam' ("x", 0)),
+     [LambdaSimple' (["x"; "y"],
+       Seq'
+        [Set' (Var' (VarParam' ("x", 0)), Box' (VarParam' ("x", 0)));
+         Set' (Var' (VarParam' ("y", 1)), Box' (VarParam' ("y", 1)));
+         ApplicTP' (BoxGet' (VarParam' ("x", 0)),
+          [BoxGet' (VarParam' ("y", 1));
+           LambdaSimple' (
+            ["z"],
+            Seq'
+             [BoxGet' (VarBound' ("x", 0, 0));
+              BoxGet' (VarBound' ("y", 0, 1));
+              Set' (Var' (VarParam' ("z", 0)), Applic' (Var' (VarFree' "/"), [Var' (VarParam' ("z", 0)); Const' (Number (Int 2))]));
+              BoxSet' (VarBound' ("y", 0, 1), Const' (Number (Int 1)));
+              BoxSet' (VarBound' ("x", 0, 0), Const' (Number (Int 3)))])])])]));
+   Set' (Var' (VarParam' ("x", 0)), Const' (Number (Int 5)))]))
+-----Test 09: box craziness, implicit get/set/bound occurrences-----
+
+Scheme:
+
+(lambda (x)
+    (x (lambda (x)
+         (x (lambda (x y)
+              (x y (lambda (z)
+                     (set! z (/ z 2))
+                     (set! y 1)
+                     (set! x 3))))))
+       (set! x 5)))
+
+
+- : unit = ()
+- : expr' =
+LambdaSimple' (["x"],
+ ApplicTP' (Var' (VarParam' ("x", 0)),
+  [LambdaSimple' (["x"],
+    ApplicTP' (Var' (VarParam' ("x", 0)),
+     [LambdaSimple' (["x"; "y"],
+       Seq'
+        [Set' (Var' (VarParam' ("x", 0)), Box' (VarParam' ("x", 0)));
+         Set' (Var' (VarParam' ("y", 1)), Box' (VarParam' ("y", 1)));
+         ApplicTP' (BoxGet' (VarParam' ("x", 0)),
+          [BoxGet' (VarParam' ("y", 1));
+           LambdaSimple' (
+            ["z"],
+            Seq'
+             [Set' (Var' (VarParam' ("z", 0)), Applic' (Var' (VarFree' "/"), [Var' (VarParam' ("z", 0)); Const' (Number (Int 2))]));
+              BoxSet' (VarBound' ("y", 0, 1), Const' (Number (Int 1)));
+              BoxSet' (VarBound' ("x", 0, 0), Const' (Number (Int 3)))])])])]));
+   Set' (Var' (VarParam' ("x", 0)), Const' (Number (Int 5)))]))
+-----Test 10: box craziness with nested define and optional\variadic lambda-----
+
+Scheme:
+
+(lambda s
+    (define s (car s))
+     (s
+       (lambda (x)
+         (x (lambda (x y)
+              (x y (lambda (z . r)
+                     (set! z (+ z ((lambda (n) (* n n)) 5)))
+                     (set! x 1)
+                     (set! y 2)))))))
+     (set! s 6))
+
+
+- : unit = ()
+- : expr' =
+LambdaOpt' ([], "s",
+ ApplicTP'
+  (LambdaSimple' (["s"],
+    Seq'
+     [Set' (Var' (VarParam' ("s", 0)), Applic' (Var' (VarFree' "car"), [Var' (VarParam' ("s", 0))]));
+      Applic' (Var' (VarParam' ("s", 0)),
+       [LambdaSimple' (["x"],
+         ApplicTP' (Var' (VarParam' ("x", 0)),
+          [LambdaSimple' (
+            ["x"; "y"],
+            Seq'
+             [Set' (Var' (VarParam' ("x", 0)), Box' (VarParam' ("x", 0)));
+              Set' (Var' (VarParam' ("y", 1)), Box' (VarParam' ("y", 1)));
+              ApplicTP' (BoxGet' (VarParam' ("x", 0)),
+               [BoxGet' (VarParam' ("y", 1));
+                LambdaOpt' (
+                 ["z"], "r",
+                 Seq'
+                  [Set' (Var' (VarParam' ("z", 0)),
+                    Applic' (
+                     Var' (VarFree' "+"),
+                     [Var' (VarParam' ("z", 0));
+                      Applic' (
+                       LambdaSimple' (["n"], ApplicTP' (Var' (VarFree' "*"), [Var' (VarParam' ("n", 0)); Var' (VarParam' ("n", 0))])),
+                       [Const' (Number (Int 5))])]));
+                   BoxSet' (VarBound' ("x", 0, 0), Const' (Number (Int 1)));
+                   BoxSet' (VarBound' ("y", 0, 1), Const' (Number (Int 2)))])])])]))]);
+      Set' (Var' (VarParam' ("s", 0)), Const' (Number (Int 6)))]),
+  [Const' (Bool false)]))
+-----Test 11: going bananas!-----
+
+Scheme:
+
+(lambda (s . t)
+    (define t (car t))
+    s
+    (lambda (k)
+      (k
+        (lambda k
+          (k
+            s
+            (lambda (t)
+              (set! t (+ t (lambda (f) (f t))))
+              (set! k 1)
+              (set! s (+ s 2)))))))
+    (set! s 5))
+
+
+- : unit = ()
+- : expr' =
+LambdaOpt' (["s"], "t",
+ Seq'
+  [Set' (Var' (VarParam' ("s", 0)), Box' (VarParam' ("s", 0)));
+   ApplicTP'
+    (LambdaSimple' (["t"],
+      Seq'
+       [Set' (Var' (VarParam' ("t", 0)), Applic' (Var' (VarFree' "car"), [Var' (VarParam' ("t", 0))]));
+        BoxGet' (VarBound' ("s", 0, 0));
+        LambdaSimple' (["k"],
+         ApplicTP' (Var' (VarParam' ("k", 0)),
+          [LambdaOpt' ([], "k",
+            ApplicTP' (Var' (VarParam' ("k", 0)),
+             [BoxGet' (VarBound' ("s", 2, 0));
+              LambdaSimple' (
+               ["t"],
+               Seq'
+                [Set' (Var' (VarParam' ("t", 0)), Box' (VarParam' ("t", 0)));
+                 Seq'
+                  [BoxSet' (
+                    VarParam' ("t", 0),
+                    Applic' (
+                     Var' (VarFree' "+"),
+                     [BoxGet' (VarParam' ("t", 0));
+                      LambdaSimple' (["f"], ApplicTP' (Var' (VarParam' ("f", 0)), [BoxGet' (VarBound' ("t", 0, 0))]))]));
+                   Set' (Var' (VarBound' ("k", 1, 0)), Const' (Number (Int 1)));
+                   BoxSet' (VarBound' ("s", 3, 0), ApplicTP' (Var' (VarFree' "+"), [BoxGet' (VarBound' ("s", 3, 0)); Const' (Number (Int 2))]))]])]))]));
+        BoxSet' (VarBound' ("s", 0, 0), Const' (Number (Int 5)))]),
+    [Const' (Bool false)])])
+-----Test 12: iddqd-----
+
+Scheme:
+
+(define (foo goo hoo)
+    (begin
+      (define t1 1)
+      (define t2 2)
+      (begin
+        (begin
+          (begin
+            (begin
+              (define t3 3)
+              (begin
+                (define t4 4)))
+            (define t5 5))
+          (define t6 6))
+        (define t7 7))
+      (define t8 8))
+    (+ 1 2)
+    (goo (goo hoo))
+    (lambda s
+      (list
+        (car s)
+        (cdr s)))
+    (lambda (x)
+      (x
+        (lambda (x)
+          (x
+            (lambda (x y z)
+              (x
+                y
+                z
+                (lambda (z)
+                  (set! z *)
+                  (z (z (z y y) y) y)
+                  (set! y 5)))))))))
+
+
+- : unit = ()
+- : expr' =
+Def' (Var' (VarFree' "foo"),
+ LambdaSimple' (["goo"; "hoo"],
+  ApplicTP'
+   (LambdaSimple' (["t1"; "t2"; "t3"; "t4"; "t5"; "t6"; "t7"; "t8"],
+     Seq'
+      [Set' (Var' (VarParam' ("t1", 0)), Const' (Number (Int 1)));
+       Set' (Var' (VarParam' ("t2", 1)), Const' (Number (Int 2)));
+       Set' (Var' (VarParam' ("t3", 2)), Const' (Number (Int 3)));
+       Set' (Var' (VarParam' ("t4", 3)), Const' (Number (Int 4)));
+       Set' (Var' (VarParam' ("t5", 4)), Const' (Number (Int 5)));
+       Set' (Var' (VarParam' ("t6", 5)), Const' (Number (Int 6)));
+       Set' (Var' (VarParam' ("t7", 6)), Const' (Number (Int 7)));
+       Set' (Var' (VarParam' ("t8", 7)), Const' (Number (Int 8)));
+       Applic' (Var' (VarFree' "+"), [Const' (Number (Int 1)); Const' (Number (Int 2))]);
+       Applic' (Var' (VarBound' ("goo", 0, 0)), [Applic' (Var' (VarBound' ("goo", 0, 0)), [Var' (VarBound' ("hoo", 0, 1))])]);
+       LambdaOpt' ([], "s",
+        ApplicTP' (Var' (VarFree' "list"),
+         [Applic' (Var' (VarFree' "car"), [Var' (VarParam' ("s", 0))]); Applic' (Var' (VarFree' "cdr"), [Var' (VarParam' ("s", 0))])]));
+       LambdaSimple' (["x"],
+        ApplicTP' (Var' (VarParam' ("x", 0)),
+         [LambdaSimple' (["x"],
+           ApplicTP' (Var' (VarParam' ("x", 0)),
+            [LambdaSimple' (
+              ["x"; "y"; "z"],
+              Seq'
+               [Set' (Var' (VarParam' ("y", 1)), Box' (VarParam' ("y", 1)));
+                ApplicTP' (
+                 Var' (VarParam' ("x", 0)),
+                 [BoxGet' (VarParam' ("y", 1));
+                  Var' (VarParam' ("z", 2));
+                  LambdaSimple' (
+                   ["z"],
+                   Seq'
+                    [Set' (Var' (VarParam' ("z", 0)), Var' (VarFree' "*"));
+                     Applic' (
+                      Var' (VarParam' ("z", 0)),
+                      [Applic' (
+                        Var' (VarParam' ("z", 0)),
+                        [Applic' (Var' (VarParam' ("z", 0)), [BoxGet' (VarBound' ("y", 0, 1)); BoxGet' (VarBound' ("y", 0, 1))]);
+                         BoxGet' (VarBound' ("y", 0, 1))]);
+                       BoxGet' (VarBound' ("y", 0, 1))]);
+                     BoxSet' (VarBound' ("y", 0, 1), Const' (Number (Int 5)))])])])]))]))]),
+   [Const' (Bool false); Const' (Bool false);
+    Const' (Bool false); Const' (Bool false);
+    Const' (Bool false); Const' (Bool false);
+    Const' (Bool false); Const' (Bool false)])))
+-----Test 13: should fail, nested define expression after non-define expression in body-----
+
+Scheme:
+
+(define (foo goo hoo)
+    (begin
+      (define t1 1)
+      (define t2 2)
+      (begin
+        (begin
+          (begin
+            (begin
+              (define t3 3)
+              (begin
+                (define t4 4)))
+            (define t5 5))
+          (define t6 6))
+        (define t7 7))
+      (define t8 8))
+    (+ 1 2)
+    (define goo /)
+    (goo (goo hoo))
+    (lambda s
+      (list
+        (car s)
+        (cdr s)))
+    (lambda (x)
+      (x
+        (lambda (x)
+          (x
+            (lambda (x y z)
+              (x
+                y
+                z
+                (lambda (z)
+                  (set! z *)
+                  (z (z (z y y) y) y)
+                  (set! y 5)))))))))
+
+
+- : unit = ()
+-----Test 14: should fail, nested define expression in explicit sequence after non-define expression in body-----
+
+Scheme:
+
+(define (foo goo hoo)
+    (begin
+      (define t1 1)
+      (define t2 2)
+      (begin
+        (begin
+          (begin
+            (begin
+              (define t3 3)
+              (begin
+                (define t4 4)))
+            (define t5 5))
+          (define t6 6))
+        (define t7 7))
+      (define t8 8))
+    (+ 1 2)
+    (goo (goo hoo))
+    (lambda s
+      (list
+        (car s)
+        (cdr s)))
+    (begin (define goo 5))
+    (lambda (x)
+      (x
+        (lambda (x)
+          (x
+            (lambda (x y z)
+              (x
+                y
+                z
+                (lambda (z)
+                  (set! z *)
+                  (z (z (z y y) y) y)
+                  (set! y 5)))))))))
+
+
+- : unit = ()
+-----Test 15: should fail, nested define expression after non-define expression in the deepest leaf of nested-define tree-----
+
+Scheme:
+
+(define (foo goo hoo)
+    (begin
+      (define t1 1)
+      (define t2 2)
+      (begin
+        (begin
+          (begin
+            (begin
+              (define t3 3)
+              (begin
+                (define t4 4)
+                (+ 1 -1)))
+            (define t5 5))
+          (define t6 6))
+        (define t7 7))
+      (define t8 8))
+    (+ 1 2)
+    (goo (goo hoo))
+    (lambda s
+      (list
+        (car s)
+        (cdr s)))
+    (lambda (x)
+      (x
+        (lambda (x)
+          (x
+            (lambda (x y z)
+              (x
+                y
+                z
+                (lambda (z)
+                  (set! z *)
+                  (z (z (z y y) y) y)
+                  (set! y 5)))))))))
+
+
+- : unit = ()
+-----Test 16: should fail, nested define expression after non-define expression not in the deepest leaf of nested-define tree-----
+
+Scheme:
+
+(define (foo goo hoo)
+    (begin
+      (define t1 1)
+      (define t2 2)
+      (begin
+        (begin
+          (begin
+            (begin
+              (define t3 3)
+              (begin
+                (define t4 4)))
+            (define t5 5)
+            (/ 2 9))
+          (define t6 6))
+        (define t7 7))
+      (define t8 8))
+    (+ 1 2)
+    (goo (goo hoo))
+    (lambda s
+      (list
+        (car s)
+        (cdr s)))
+    (lambda (x)
+      (x
+        (lambda (x)
+          (x
+            (lambda (x y z)
+              (x
+                y
+                z
+                (lambda (z)
+                  (set! z *)
+                  (z (z (z y y) y) y)
+                  (set! y 5)))))))))
+
+
+- : unit = ()
