@@ -1106,4 +1106,185 @@ let run_semantics expr =
   
 end;; (* struct Semantics *)
 
+module type CODE_GEN = sig
+  val code_gen: expr' -> string
+  val compile_scheme_file: string -> string -> unit
+end
+;;
+
+module Code_Gen : CODE_GEN = struct
+
+let asm_comment s = 
+  "/* " ^ s ^ "*/\n"
+let label_counts = ref [];;
+let gen_label s = 
+  if List.mem_assoc s !label_counts then label_counts := !label_counts 
+     else label_counts:= (s,ref 0) :: !label_counts ;
+  let count = List.assoc s !label_counts in
+  let ans = s ^ (string_of_int !count) in
+  count := !count +1;
+  ans;; 
+let start_of_function,end_function  = 
+  "PUSH(FP);\nMOV(FP,SP);\n","POP(FP);\nRETURN;\n";;
+let code_gen e =
+  let mv_const s = "MOV(R0," ^  s ^ "\n" in 
+  let push_imm n = "PUSH(IMM(" ^ n ^ ")); \n" in
+  let rec sexpr_gen e = 
+    match e with
+      |Void  -> "CALL(MAKE_SOB_VOID);\n"
+      |Bool b ->
+          let b = if b then "1" else "0" in
+          (push_imm b) ^ "CALL(MAKE_SOB_BOOL); \n DROP(1);"
+        
+      |Nil -> "CALL(MAKE_SOB_NIL); \n" 
+      |Number (Int x) -> 
+          let xstr = string_of_int x in 
+             push_imm xstr ^ 
+             "CALL(MAKE_SOB_INTEGER);\n" ^
+             "DROP(1);\n"
+      |Number (Fraction{numerator=a;denominator=b}) ->
+          let a,b = string_of_int a, string_of_int b in
+          push_imm b ^ push_imm a ^ 
+          "CALL(MAKE_SOB_INTEGER);
+           DROP(1);
+           MOV(R1,INDD(R0,1));
+           CALL(MAKE_SOB_INTEGER);
+           MOV(R0, INDD(R0,1)); //now r0 holds the value of b
+           DIV(R1,R0);
+           PUSH(R1);
+           CALL(MAKE_SOB_INTEGER);
+           DROP(1); \n"
+      |Char e -> 
+          let e = string_of_int (Char.code e) in
+          push_imm e ^ 
+          "CALL(MAKE_SOB_CHAR);\nDROP(1); \n"
+      |String s->
+          let n = string_of_int (String.length s) in
+          let chars = string_to_list s in
+          let prefix,suffix = push_imm n, "CALL(MAKE_SOB_STRING);" ^
+           "\nDROP(1+"^n^");" in
+          prefix ^ List.fold_left 
+            (fun b a -> let a = string_of_int(Char.code a) in
+              push_imm a ^ b)
+            "" chars
+            
+            ^suffix
+
+      |Symbol e -> raise (err "not sure what to do with symbol")
+      |Pair(car,cdr) ->
+          let ecar,ecdr = sexpr_gen car, sexpr_gen  cdr in
+          ecar  
+          ^"PUSH(R0);\n" 
+          ^ ecdr ^
+          "PUSH(R0);\n"^
+          "CALL(MAKE_SOB_PAIR); \n"^
+          "DROP(2);\n" 
+      |Vector ls ->
+          let n = string_of_int(List.length ls) in
+          let prefix,suffix = push_imm n, "CALL(MAKE_SOB_VECTOR) \n"^
+            "DROP(1+"^n^")" in
+          prefix ^
+          List.fold_left
+            (fun b a ->
+              let aprog = sexpr_gen a in
+              aprog ^ push_imm "RO" ^ b)
+            "" ls  ^ suffix
+  in
+  let delta = 2 in
+  let var_gen = function
+    |VarFree' v -> raise X_not_yet_implemented
+    |VarParam' (name,minor) ->
+        let minor = minor+delta in 
+        asm_comment "making the following param " ^ name ^
+        "MOV(R0,FPARG("^(string_of_int minor) ^"));\n" 
+    |VarBound' (name,major,minor) ->
+        let minor = string_of_int (minor + delta) in
+        let major = string_of_int major in  
+        asm_comment "making the following param " ^ name ^
+        "MOV(R0,FPARG(0));\n"^
+        "MOV(R0,INDD(R0,"^major^"));\n"^
+        "MOV(R0,INDD(R0,"^minor^"));\n" in
+  let rec run depth = function
+    |Const' e ->
+        sexpr_gen e
+    |Var' v -> var_gen v 
+    |LambdaSimple' (params,bdy) ->
+       let label = gen_label "lambda" in
+       let labelexit = gen_label "exit" in
+       let env_sz = string_of_int(List.length depth) in
+       "// IN LAMBDASIMPLE AAAAA \n"^
+       "MOV(R1,1+"^env_sz^"); \n"^
+       "MOV(R2, FPARG(0)); \n" ^
+       "for(int i=0,int j=1; i < " ^ env_sz ^"; ++i, ++j){
+         MOV(R3, INDD(R2,i));
+         MOV(INDD(R1,j),R3);
+       }\n"^
+       "PUSH(FPARG(1)); \n" ^
+       "CALL(MALLOC); \n" ^
+       "DROP(1); \n" ^
+       "for(int i=0; i<FPARG(1); ++i){
+         MOV(R3,FPARG(2+i));
+         MOV(INDD(R0,i),R3);
+        }\n" ^
+       "MOV(INDD(R1,0),R0); \n" ^
+       "PUSH(R1); \n"^
+       "PUSH(&&"^label^"); \n" ^
+       "CALL(MAKE_SOB_CLOSURE); \n" ^
+       "JUMP(" ^labelexit ^"); \n"^
+       label^":\n" ^
+       start_of_function ^
+       run (params::depth) bdy ^
+       end_function 
+       ^
+       labelexit ^": \\OUT OF LAMBDA \n"
+    |Applic'(proc,argl) ->
+      let gen_args = List.map (run depth) (List.rev argl) in
+      let num_args = string_of_int (List.length argl) in
+      let fst_arg, gen_argtl = List.hd gen_args, List.tl gen_args in 
+      let args_prog = 
+        List.fold_left 
+          (fun a b->
+            a ^ "PUSH(R0); \n" ^ b) fst_arg gen_argtl ^ "PUSH(R0); \n" in
+      let prog = args_prog ^ push_imm num_args in
+      let proc = run depth proc in
+      let prog = "//IN APPLIC " ^ prog ^ proc in
+      prog ^
+      "PUSH(R0);\n"^
+      "CALL(IS_SOB_CLOSURE); \n" ^
+      "CMP(R0,0); \n"^
+      "JUMP_EQ(L_ERROR_NOT_CLOSURE);\n" ^
+      "POP(R0); \n" ^
+      "PUSH(INDD(R0,1));\n" ^
+      "CALL(INDD(RO,2));\n" ^
+      "POP(R1); \n" ^
+      "POP(R1); \n" ^
+      "DROP(R1); \n\\OUT OF APPLIC \n" 
+    | _ -> raise X_not_yet_implemented in 
+        
+          
+       
+  run [] e
+;;
+            
+
+
+
+    
+
+
+let compile_scheme_file scm_source_file asm_target_file =
+  raise X_not_yet_implemented
+;;
+
+end;;
+
+let compose f g x = f(g x) ;;
+let tst = compose Code_Gen.code_gen Semantics.run_semantics;;
+let tst = compose tst Tag_Parser.read_expression;;
+let printtst x = 
+  let x= tst x in
+  Printf.printf "%s" x;;
+
+
+
 

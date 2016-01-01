@@ -23,8 +23,18 @@ int main()
 #include "math.lib"
 #include "string.lib"
 #include "system.lib"
+#include "scheme.lib"
 
  CONTINUE:
+  CALL(MAKE_SOB_VOID);
+  CALL(WRITE_SOB_VOID);
+  PUSH(IMM(4));
+  CALL(MAKE_SOB_INTEGER);
+  DROP(1);
+  PUSH(R0);
+  CALL(WRITE_SOB_INTEGER);
+  DROP(1);
+  return 7;
   PUSH(IMM(64));
   CALL(MALLOC);
   SHOW("MALLOC RETURNED ", R0);
