@@ -1,0 +1,141 @@
+/* THIS IS THE START OF THE PROGRAN */
+#include <stdio.h>
+#include <stdlib.h>
+
+/* change to 0 for no debug info to be printed: */
+#define DO_SHOW 1
+#define FALSE_ADDR 32
+#include "arch/cisc.h"
+
+int main()
+{
+  START_MACHINE;
+
+  JUMP(CONTINUE);
+
+#include "arch/char.lib"
+#include "arch/io.lib"
+#include "arch/math.lib"
+#include "arch/string.lib"
+#include "arch/system.lib"
+#include "arch/scheme.lib"
+  CONTINUE:
+  PUSH(IMM(0));
+  PUSH(IMM(0));
+  PUSH(IMM(0));
+  PUSH(IMM(0));
+  MOV(FP,SP);
+
+
+
+ /*new expr */ 
+ 
+
+PUSH(IMM(1)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(2)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(3)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(4)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(5)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(6)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(7)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(8)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(9)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(12)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(3)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(4)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(2)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(32)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(4)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(24)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(3)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(2)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(3)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(4)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(5)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(3)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(2)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+
+PUSH(IMM(3)); 
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+/*epilogue */ 
+
+
+PUSH(R0);
+CALL(WRITE_SOB);
+CALL(WRITELN);
+DROP(1);
+STOP_MACHINE;
+return 0;
+
+L_ERROR_NOT_CLOSURE:
+  exit(12);
+}

@@ -767,7 +767,8 @@ let rec tag_parse = function
 ;;
 let read_expression string = tag_parse (Parser.read_sexpr string);;
 
-let read_expressions string = List.map tag_parse (Parser.read_sexprs string);;
+let read_expressions string =
+  List.rev( List.map tag_parse (Parser.read_sexprs string));;
 
 let cat_space a b = a ^ " " ^ b;;
 
@@ -1117,13 +1118,23 @@ module Code_Gen : CODE_GEN = struct
 let asm_comment s = 
   "/* " ^ s ^ "*/\n"
 let label_counts = ref [];;
+
 let gen_label s = 
-  if List.mem_assoc s !label_counts then label_counts := !label_counts 
+  if List.mem_assoc s !label_counts then () 
      else label_counts:= (s,ref 0) :: !label_counts ;
   let count = List.assoc s !label_counts in
   let ans = s ^ (string_of_int !count) in
   count := !count +1;
   ans;; 
+
+let symbol_table= Hashtbl.create 10;;
+let init_table()=
+  let add y z = Hashtbl.add symbol_table y z in
+  add "+" "PLUS";
+  add "car" "CAR";
+  add "cdr" "CDR";
+;; 
+  
 let start_of_function,end_function  = 
   "PUSH(FP);\nMOV(FP,SP);\n","POP(FP);\nRETURN;\n";;
 let code_gen e =
@@ -1195,12 +1206,10 @@ let code_gen e =
     |VarFree' v -> raise X_not_yet_implemented
     |VarParam' (name,minor) ->
         let minor = minor+delta in 
-        asm_comment "making the following param " ^ name ^
         "MOV(R0,FPARG("^(string_of_int minor) ^"));\n" 
     |VarBound' (name,major,minor) ->
-        let minor = string_of_int (minor + delta) in
+        let minor = string_of_int minor  in
         let major = string_of_int major in  
-        asm_comment "making the following param " ^ name ^
         "MOV(R0,FPARG(0));\n"^
         "MOV(R0,INDD(R0,"^major^"));\n"^
         "MOV(R0,INDD(R0,"^minor^"));\n" in
@@ -1214,8 +1223,11 @@ let code_gen e =
        let env_sz = string_of_int(List.length depth) in
        "// IN LAMBDASIMPLE AAAAA \n"^
        "MOV(R1,1+"^env_sz^"); \n"^
+       "PUSH(R1); \n" ^
+       "CALL(MALLOC);\n"^
+       "MOV(R1,R0); \nDROP(1); \n" ^
        "MOV(R2, FPARG(0)); \n" ^
-       "for(int i=0,int j=1; i < " ^ env_sz ^"; ++i, ++j){
+       "for(int i=0,j=1; i < " ^ env_sz ^"; ++i, ++j){
          MOV(R3, INDD(R2,i));
          MOV(INDD(R1,j),R3);
        }\n"^
@@ -1227,27 +1239,33 @@ let code_gen e =
          MOV(INDD(R0,i),R3);
         }\n" ^
        "MOV(INDD(R1,0),R0); \n" ^
-       "PUSH(R1); \n"^
-       "PUSH(&&"^label^"); \n" ^
-       "CALL(MAKE_SOB_CLOSURE); \n" ^
+       "PUSH(IMM(3)); \n" ^
+       "CALL(MALLOC); \n" ^
+       "DROP(1); \n" ^
+       "MOV(INDD(R0,0),T_CLOSURE);\n"^
+       "MOV(INDD(R0,1),R1); \n"^
+       "MOV(INDD(R0,2),&&"^label^");\n" ^
        "JUMP(" ^labelexit ^"); \n"^
        label^":\n" ^
        start_of_function ^
        run (params::depth) bdy ^
        end_function 
        ^
-       labelexit ^": \\OUT OF LAMBDA \n"
+       labelexit ^": //OUT OF LAMBDA \n"
     |Applic'(proc,argl) ->
       let gen_args = List.map (run depth) (List.rev argl) in
       let num_args = string_of_int (List.length argl) in
-      let fst_arg, gen_argtl = List.hd gen_args, List.tl gen_args in 
+      let fst_arg, gen_argtl =
+            if gen_args <> [] then  (List.hd gen_args ,List.tl gen_args)
+            else ("",[]) in 
+      let sfx = if fst_arg = "" then "" else "PUSH(R0); \n" in
       let args_prog = 
         List.fold_left 
           (fun a b->
-            a ^ "PUSH(R0); \n" ^ b) fst_arg gen_argtl ^ "PUSH(R0); \n" in
+            a ^ "PUSH(R0); \n" ^ b) fst_arg gen_argtl ^ sfx in
       let prog = args_prog ^ push_imm num_args in
       let proc = run depth proc in
-      let prog = "//IN APPLIC " ^ prog ^ proc in
+      let prog = "//IN APPLIC \n" ^ prog ^ proc in
       prog ^
       "PUSH(R0);\n"^
       "CALL(IS_SOB_CLOSURE); \n" ^
@@ -1255,10 +1273,27 @@ let code_gen e =
       "JUMP_EQ(L_ERROR_NOT_CLOSURE);\n" ^
       "POP(R0); \n" ^
       "PUSH(INDD(R0,1));\n" ^
-      "CALL(INDD(RO,2));\n" ^
+      "CALLA(INDD(R0,2));\n" ^
       "POP(R1); \n" ^
       "POP(R1); \n" ^
-      "DROP(R1); \n\\OUT OF APPLIC \n" 
+      "DROP(R1); \n //OUT OF APPLIC \n" 
+    |If'(test,dit,dif) ->
+        let tst_prog,dit_prog,dif_prog =
+          run depth test,run depth dit, run depth dif in
+        let label_else,label_ifexit = gen_label "else", gen_label "if_exit" in
+        let cmp_s,jmp_eq,jmp_ex = "\nCMP(R0,FALSE_ADDR);\n",
+                                  "\nJUMP_EQ("^label_else^");\n",
+                                  "\nJUMP("^label_ifexit^");\n" in
+       tst_prog ^ cmp_s ^ jmp_eq ^ dit_prog ^ jmp_ex
+       ^ label_else ^":\n"^ dif_prog^ label_ifexit^":\n"
+    
+    |Seq' exprs ->
+        List.fold_left 
+          (fun a b-> 
+            let b = run depth b in
+             a ^ "\n" ^b)
+          ""
+          exprs
     | _ -> raise X_not_yet_implemented in 
         
           
@@ -1269,11 +1304,26 @@ let code_gen e =
 
 
 
-    
-
+let init()=
+   file_to_string "prologue.c", file_to_string "epilogue.c";;
 
 let compile_scheme_file scm_source_file asm_target_file =
-  raise X_not_yet_implemented
+  let prologue,epilogue = init() in
+  let str = file_to_string scm_source_file in
+  debug "converted file to string";
+  let exprs = Tag_Parser.read_expressions str in
+  debug "aaaa";
+  let exprs = List.map Semantics.run_semantics exprs in
+  debug "before code_gen";
+  let asm_strs = List.map code_gen exprs in
+      debug"hahahha";
+  let asm_str = List.fold_left 
+      (fun a b-> a ^ "\n /*new expr */ \n \n" ^ b) 
+      prologue 
+      asm_strs in
+  let asm_str = asm_str ^ epilogue in
+  string_to_file asm_str asm_target_file
+
 ;;
 
 end;;
@@ -1287,4 +1337,19 @@ let printtst x =
 
 
 
+let file_to_string input_file =
+  let in_channel = open_in input_file in
+  let rec run () =
+    try 
+      let ch = input_char in_channel in ch :: (run ())
+    with End_of_file ->
+      ( close_in in_channel;
+        [] )
+  in list_to_string (run ());;
 
+let string_to_file out_string output_file =
+  let out_channel = open_out output_file in
+  ( output_string out_channel out_string;
+    close_out out_channel );;
+let mkf s = 
+  string_to_file (tst s);;
