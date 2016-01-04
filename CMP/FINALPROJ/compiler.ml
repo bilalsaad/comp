@@ -889,7 +889,7 @@ let annotate_lexical_addresses e =
         let strs' = create_assoc strs in 
         LambdaSimple'(strs, run strs' (pvars::bvars) e)
     | LambdaOpt(strs,str,e) ->
-        let strs' = str :: strs in
+        let strs' = strs @ [str] in
         let strs' = create_assoc strs' in
         LambdaOpt' (strs,str, run strs' (pvars::bvars) e)
     | Applic (func, args) ->
@@ -1107,6 +1107,25 @@ let run_semantics expr =
   
 end;; (* struct Semantics *)
 
+module IO = struct
+
+  let file_to_string input_file =
+  let in_channel = open_in input_file in
+  let rec run () =
+    try 
+      let ch = input_char in_channel in ch :: (run ())
+    with End_of_file ->
+      ( close_in in_channel;
+        [] )
+  in list_to_string (run ());;
+
+let string_to_file out_string output_file =
+  let out_channel = open_out output_file in
+  ( output_string out_channel out_string;
+    close_out out_channel );;
+
+
+end;;
 module type CODE_GEN = sig
   val code_gen: expr' -> string
   val compile_scheme_file: string -> string -> unit
@@ -1137,9 +1156,112 @@ let init_table()=
   
 let start_of_function,end_function  = 
   "PUSH(FP);\nMOV(FP,SP);\n","POP(FP);\nRETURN;\n";;
+let start_of_lambda label labelexit env_sz = 
+   "// IN LAMBDA AAAAA \n"^
+   "MOV(R1,1+"^env_sz^"); \n"^
+   "PUSH(R1); \n" ^
+   "CALL(MALLOC);\n"^
+   "MOV(R1,R0); \nDROP(1); \n" ^
+   "MOV(R2, FPARG(0)); \n" ^
+   "for(int i=0,j=1; i < " ^ env_sz ^"; ++i, ++j){
+     MOV(R3, INDD(R2,i));
+     MOV(INDD(R1,j),R3);
+   }\n"^
+   "PUSH(FPARG(1)); \n" ^
+   "CALL(MALLOC); \n" ^
+   "DROP(1); \n" ^
+   "for(int i=0; i<FPARG(1); ++i){
+     MOV(R3,FPARG(2+i));
+     MOV(INDD(R0,i),R3);
+    }\n" ^
+   "MOV(INDD(R1,0),R0); \n" ^
+   "PUSH(IMM(3)); \n" ^
+   "CALL(MALLOC); \n" ^
+   "DROP(1); \n" ^
+   "MOV(INDD(R0,0),T_CLOSURE);\n"^
+   "MOV(INDD(R0,1),R1); \n"^
+   "MOV(INDD(R0,2),&&"^label^");\n" ^
+   "JUMP(" ^labelexit ^"); \n"^
+   label^":\n"^
+     start_of_function 
+;;
+(*p - number of normal args in lambda_op*)
+let lambda_op_fix p = 
+  let p = string_of_int p in
+  let loop_label,fin_label=
+    gen_label "lambda_opt_loop", gen_label "finish_lambda_opt" in
+  "MOV(R1,FPARG(1)); \n"^
+  "CALL(MAKE_SOB_NIL); \n" ^
+  "MOV(R2,R0); \n" ^ 
+  loop_label ^ ":\n" ^
+  " CMP(R1,"^p^");\n" ^
+  " JUMP_EQ("^fin_label^"); \n" ^
+  " PUSH(R2); \n" ^
+  " PUSH(FPARG(R1+1)); \n" ^
+  " CALL(MAKE_SOB_PAIR);\n" ^
+  " DROP(2); \n"^
+  " SUB(R1,1); \n"^
+  " MOV(R2,R0); \n" ^
+  " JUMP("^loop_label^");\n" ^
+  fin_label ^": \n"^
+  "MOV(FPARG(2+"^p^"),R2); \n"^
+  "MOV(FPARG(1),1+"^p^");\n"
+
+let push_imm n = "PUSH(IMM(" ^ n ^ ")); \n";;
+
+
+let applic_bdy f argl proc= 
+  let gen_args = List.map f (List.rev argl) in
+  let num_args = string_of_int (List.length argl) in
+  let fst_arg, gen_argtl =
+        if gen_args <> [] then  (List.hd gen_args ,List.tl gen_args)
+        else ("",[]) in 
+  let sfx = if fst_arg = "" then "" else "PUSH(R0); \n" in
+  let args_prog = 
+    List.fold_left 
+      (fun a b->
+        a ^ "PUSH(R0); \n" ^ b) fst_arg gen_argtl ^ sfx in
+  let prog = args_prog ^ push_imm num_args in
+  let proc = f proc in
+  let prog = "//IN APPLIC \n" ^ prog ^ proc in
+  prog ^
+  "PUSH(R0);\n"^
+  "CALL(IS_SOB_CLOSURE); \n" ^
+  "CMP(R0,0); \n"^
+  "JUMP_EQ(L_ERROR_NOT_CLOSURE);\n" ^
+  "POP(R0); \n" ^
+  "PUSH(INDD(R0,1));\n"
+;;
+
+let normal_applic_suffix = 
+      "CALLA(INDD(R0,2));\n" ^
+      "POP(R1); \n" ^
+      "POP(R1); \n" ^
+      "DROP(R1); \n //OUT OF APPLIC \n" 
+;;
+
+
+let applic_tp_suffix arg_sz  =
+  let lbl,lbl_jmp = gen_label "tail_call_copy", gen_label "jmpa" in 
+  "PUSH(FPARG(-1));\n" ^  
+  "MOV(R2,FP); \n" ^
+  "SUB(R2,(FPARG(1)+4)); \n" ^
+  "MOV(R3,FP); \n" ^
+  "MOV(FP,FPARG(-2));\n" ^
+  "MOV(R5,FP+"^arg_sz^"+4); \n" ^
+  lbl ^":\n"^
+  "CMP(R3,R5); \n"^
+  "JUMP_EQ("^lbl_jmp^"); \n"^
+  " MOV(IND(R2),IND(FP)); \n"^
+  " ADD(R3,1); \n" ^
+  " ADD(R2,1); \n" ^
+  " JUMP("^lbl^"); \n"^
+  lbl_jmp^": \n" ^
+  "JUMPA(INDD(R0,2)); \n"
+
+
 let code_gen e =
   let mv_const s = "MOV(R0," ^  s ^ "\n" in 
-  let push_imm n = "PUSH(IMM(" ^ n ^ ")); \n" in
   let rec sexpr_gen e = 
     match e with
       |Void  -> "CALL(MAKE_SOB_VOID);\n"
@@ -1172,33 +1294,34 @@ let code_gen e =
       |String s->
           let n = string_of_int (String.length s) in
           let chars = string_to_list s in
-          let prefix,suffix = push_imm n, "CALL(MAKE_SOB_STRING);" ^
-           "\nDROP(1+"^n^");" in
-          prefix ^ List.fold_left 
-            (fun b a -> let a = string_of_int(Char.code a) in
-              push_imm a ^ b)
-            "" chars
-            
-            ^suffix
+          let prefix,suffix = "" ,push_imm n ^ "CALL(MAKE_SOB_STRING) \n"^
+            "DROP(1+"^n^")" in
+          prefix ^
+          List.fold_left
+            (fun a b ->
+              let b = string_of_int(Char.code b) in
+              a ^ push_imm b 
+            )
+            "" chars  ^ suffix 
 
       |Symbol e -> raise (err "not sure what to do with symbol")
       |Pair(car,cdr) ->
           let ecar,ecdr = sexpr_gen car, sexpr_gen  cdr in
-          ecar  
+          ecdr  
           ^"PUSH(R0);\n" 
-          ^ ecdr ^
+          ^ ecar ^
           "PUSH(R0);\n"^
           "CALL(MAKE_SOB_PAIR); \n"^
           "DROP(2);\n" 
       |Vector ls ->
           let n = string_of_int(List.length ls) in
-          let prefix,suffix = push_imm n, "CALL(MAKE_SOB_VECTOR) \n"^
+          let prefix,suffix = "" ,push_imm n ^ "CALL(MAKE_SOB_VECTOR) \n"^
             "DROP(1+"^n^")" in
           prefix ^
           List.fold_left
-            (fun b a ->
-              let aprog = sexpr_gen a in
-              aprog ^ push_imm "RO" ^ b)
+            (fun a b ->
+              let aprog = sexpr_gen b in
+              a   ^ aprog ^"PUSH(R0); \n")
             "" ls  ^ suffix
   in
   let delta = 2 in
@@ -1221,62 +1344,29 @@ let code_gen e =
        let label = gen_label "lambda" in
        let labelexit = gen_label "exit" in
        let env_sz = string_of_int(List.length depth) in
-       "// IN LAMBDASIMPLE AAAAA \n"^
-       "MOV(R1,1+"^env_sz^"); \n"^
-       "PUSH(R1); \n" ^
-       "CALL(MALLOC);\n"^
-       "MOV(R1,R0); \nDROP(1); \n" ^
-       "MOV(R2, FPARG(0)); \n" ^
-       "for(int i=0,j=1; i < " ^ env_sz ^"; ++i, ++j){
-         MOV(R3, INDD(R2,i));
-         MOV(INDD(R1,j),R3);
-       }\n"^
-       "PUSH(FPARG(1)); \n" ^
-       "CALL(MALLOC); \n" ^
-       "DROP(1); \n" ^
-       "for(int i=0; i<FPARG(1); ++i){
-         MOV(R3,FPARG(2+i));
-         MOV(INDD(R0,i),R3);
-        }\n" ^
-       "MOV(INDD(R1,0),R0); \n" ^
-       "PUSH(IMM(3)); \n" ^
-       "CALL(MALLOC); \n" ^
-       "DROP(1); \n" ^
-       "MOV(INDD(R0,0),T_CLOSURE);\n"^
-       "MOV(INDD(R0,1),R1); \n"^
-       "MOV(INDD(R0,2),&&"^label^");\n" ^
-       "JUMP(" ^labelexit ^"); \n"^
-       label^":\n" ^
-       start_of_function ^
-       run (params::depth) bdy ^
+       let lambda_start = start_of_lambda label labelexit env_sz in
+
+      lambda_start^ run (params::depth) bdy ^
        end_function 
        ^
        labelexit ^": //OUT OF LAMBDA \n"
+    |LambdaOpt'(params,optparam,bdy)->
+       let label = gen_label "lambda" in
+       let labelexit = gen_label "exit" in
+       let env_sz = string_of_int(List.length depth) in
+       let lambda_start=start_of_lambda label labelexit env_sz in
+       lambda_start^lambda_op_fix (List.length params)^run (params::depth) bdy^
+       end_function^labelexit^": //OUT OF LAMBDA \n"
+        
+
     |Applic'(proc,argl) ->
-      let gen_args = List.map (run depth) (List.rev argl) in
-      let num_args = string_of_int (List.length argl) in
-      let fst_arg, gen_argtl =
-            if gen_args <> [] then  (List.hd gen_args ,List.tl gen_args)
-            else ("",[]) in 
-      let sfx = if fst_arg = "" then "" else "PUSH(R0); \n" in
-      let args_prog = 
-        List.fold_left 
-          (fun a b->
-            a ^ "PUSH(R0); \n" ^ b) fst_arg gen_argtl ^ sfx in
-      let prog = args_prog ^ push_imm num_args in
-      let proc = run depth proc in
-      let prog = "//IN APPLIC \n" ^ prog ^ proc in
-      prog ^
-      "PUSH(R0);\n"^
-      "CALL(IS_SOB_CLOSURE); \n" ^
-      "CMP(R0,0); \n"^
-      "JUMP_EQ(L_ERROR_NOT_CLOSURE);\n" ^
-      "POP(R0); \n" ^
-      "PUSH(INDD(R0,1));\n" ^
-      "CALLA(INDD(R0,2));\n" ^
-      "POP(R1); \n" ^
-      "POP(R1); \n" ^
-      "DROP(R1); \n //OUT OF APPLIC \n" 
+       let applic_bdy = applic_bdy (run depth) argl proc in
+      applic_bdy ^ normal_applic_suffix
+
+    |ApplicTP'(proc,argl) ->
+        let applic_bdy = applic_bdy (run depth) argl proc  in
+        applic_bdy ^ applic_tp_suffix (string_of_int (List.length argl))
+
     |If'(test,dit,dif) ->
         let tst_prog,dit_prog,dif_prog =
           run depth test,run depth dit, run depth dif in
@@ -1303,20 +1393,16 @@ let code_gen e =
             
 
 
-
+open IO;;
 let init()=
    file_to_string "prologue.c", file_to_string "epilogue.c";;
 
 let compile_scheme_file scm_source_file asm_target_file =
   let prologue,epilogue = init() in
   let str = file_to_string scm_source_file in
-  debug "converted file to string";
   let exprs = Tag_Parser.read_expressions str in
-  debug "aaaa";
   let exprs = List.map Semantics.run_semantics exprs in
-  debug "before code_gen";
   let asm_strs = List.map code_gen exprs in
-      debug"hahahha";
   let asm_str = List.fold_left 
       (fun a b-> a ^ "\n /*new expr */ \n \n" ^ b) 
       prologue 
@@ -1337,19 +1423,3 @@ let printtst x =
 
 
 
-let file_to_string input_file =
-  let in_channel = open_in input_file in
-  let rec run () =
-    try 
-      let ch = input_char in_channel in ch :: (run ())
-    with End_of_file ->
-      ( close_in in_channel;
-        [] )
-  in list_to_string (run ());;
-
-let string_to_file out_string output_file =
-  let out_channel = open_out output_file in
-  ( output_string out_channel out_string;
-    close_out out_channel );;
-let mkf s = 
-  string_to_file (tst s);;

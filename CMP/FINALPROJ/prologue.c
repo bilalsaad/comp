@@ -5,6 +5,7 @@
 /* change to 0 for no debug info to be printed: */
 #define DO_SHOW 1
 #define FALSE_ADDR 32
+#define db {printf("LINE: %d\n",__LINE__);}
 #include "arch/cisc.h"
 
 int main()

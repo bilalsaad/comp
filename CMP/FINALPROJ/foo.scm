@@ -1,3 +1,8 @@
-(begin 1 2 3 4 5 6 7 8 9 12 3  4 2 32 4 24 3 2 3 4 5 3 2 3)
+((lambda(f)
+   ((lambda(x) (x x))
+    (lambda(x) (f (lambda(z) ((x x) z)))))) 
+ (lambda(x) "moshe"))
 
 
+
+;((lambda(x) (x x)) (lambda(x) '()))

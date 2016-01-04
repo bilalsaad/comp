@@ -3,7 +3,7 @@
 
 PUSH(R0);
 CALL(WRITE_SOB);
-CALL(WRITELN);
+printf("\n");
 DROP(1);
 STOP_MACHINE;
 return 0;
