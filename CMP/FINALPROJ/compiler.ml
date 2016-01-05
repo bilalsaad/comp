@@ -1190,6 +1190,9 @@ let lambda_op_fix p =
   let p = string_of_int p in
   let loop_label,fin_label=
     gen_label "lambda_opt_loop", gen_label "finish_lambda_opt" in
+  let stck_fix, fin_sck =gen_label "stack_fix" ,gen_label "stack_fix_end"in
+  let stck_fix2, stck_fix3 = gen_label "empty_opt_case",gen_label "empty_opt"in
+  let fin_sck2 = gen_label "end_of_nil_case_opt" in
   "MOV(R1,FPARG(1)); \n"^
   "CALL(MAKE_SOB_NIL); \n" ^
   "MOV(R2,R0); \n" ^ 
@@ -1204,8 +1207,47 @@ let lambda_op_fix p =
   " MOV(R2,R0); \n" ^
   " JUMP("^loop_label^");\n" ^
   fin_label ^": \n"^
+  "CMP(IND(R2),T_NIL); \n" ^
+  "JUMP_EQ("^stck_fix2^"); \n" ^
   "MOV(FPARG(2+"^p^"),R2); \n"^
-  "MOV(FPARG(1),1+"^p^");\n"
+  "MOV(R4,FP); \n "^
+  "SUB(R4,IMM(4)); \n" ^
+  "SUB(R4,FPARG(1)); // now r4 should hold number of old args \n"^
+  "MOV(FPARG(1),1+"^p^");\n"^
+  "MOV(R3,FP); // now r3 should hold new number of args \n" ^
+  "SUB(R3,IMM(4)); \n" ^
+  "SUB(R3,FPARG(1)); \n" ^
+  "MOV(R5,R3); \n" ^
+  "SUB(R5,R4); \n" ^
+  "JUMP_EQ("^stck_fix2^"); \n"^
+   stck_fix ^ ": \n" ^
+  " CMP(R3,SP); \n" ^
+  " JUMP_EQ("^fin_sck ^"); \n" ^
+  " MOV(STACK(R4),STACK(R3)); \n" ^
+  " INCR(R4); \n" ^
+  " INCR(R3); \n" ^
+  " JUMP(" ^ stck_fix ^ "); \n" ^
+  stck_fix2^":\n " ^
+  " MOV(R5,IMM(-1)); \n" ^
+  " MOV(R6,SP);\n " ^
+  " MOV(R3,SP); \n" ^
+  " DECR(R3); \n " ^
+  " MOV(R4,FP); \n "^
+  " SUB(R4,IMM(4)); \n" ^
+  " SUB(R4,FPARG(1)); // now r4 should hold number of old args \n"^
+  stck_fix3 ^ ":\n" ^
+  " CMP(R3,R4); \n" ^
+  " JUMP_LT("^fin_sck2^"); \n" ^
+  " MOV(STACK(R6),STACK(R3)); \n" ^ 
+  " DECR(R6); \n" ^
+  " DECR(R3); \n" ^
+  " JUMP("^stck_fix3^");\n" ^
+  fin_sck2 ^": \n" ^
+  "MOV(STACK(R6),R2); \n" ^
+  fin_sck ^": \n" ^
+  "//need to fix the stack pointer stuff now \n"^
+  "SUB(SP,R5); \n"^
+  "MOV(FP,SP); \n" 
 
 let push_imm n = "PUSH(IMM(" ^ n ^ ")); \n";;
 
@@ -1248,8 +1290,9 @@ let applic_tp_suffix arg_sz  =
   "SUB(R2,(FPARG(1)+4)); \n" ^
   "MOV(R3,FP); \n" ^
   "MOV(FP,FPARG(-2));\n" ^
-  "MOV(R5,FP+"^arg_sz^"+4); \n" ^
+  "MOV(R5,R3+"^arg_sz^"+4); \n" ^
   lbl ^":\n"^
+  "BP;" ^
   "CMP(R3,R5); \n"^
   "JUMP_EQ("^lbl_jmp^"); \n"^
   " MOV(IND(R2),IND(FP)); \n"^
