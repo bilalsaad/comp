@@ -1126,6 +1126,76 @@ let string_to_file out_string output_file =
 
 
 end;;
+module SYSTEM_CONSTANTS = struct 
+  let t_void=		937610;;
+  let t_nil =	722689;;
+  let t_bool= 		741553;;
+  let t_char =		181048;;
+  let t_integer= 	945311;;
+  let t_string =	799345;;
+  let t_symbol =	368031;;
+  let t_pair 	=	885397;;
+  let t_vector =	335728;;
+  let t_closure =	276405;;
+  let t_rational = 235937;;
+  let const_tble = 1;;
+  let init= [(Void,[t_void]);
+             (Nil,[t_nil]);
+             (Bool false,[t_bool; 0]);
+             (Bool true,[t_bool; 1]);];;
+  let rec find expr  = function 
+    |[] -> raise (err "something is wrong with the topilogical sort")
+    |(a,b,c)::xs -> if a=expr then b else find expr xs;;
+  let tble = ref [] ;;
+  let table() = !tble;;
+  let create_table lst = 
+    let rec helper so_far curr_add= function
+      | [] -> so_far
+      |Pair(a,b) :: rest -> 
+          let tuple = (Pair(a,b),
+                       curr_add,
+                       [t_pair;find a so_far; find b so_far]) in
+          helper (tuple::so_far) (curr_add+3) rest 
+      |Vector exprs :: rest ->
+        let lst = t_vector :: List.map (fun (x,_,_)->find x so_far) so_far in
+        let tuple = (Vector exprs, curr_add, lst) in
+        helper (tuple ::so_far) (curr_add + List.length lst) rest
+      |Bool e :: rest-> 
+          let tuple =
+            (Bool e, curr_add,[t_bool;if e then 1 else 0]) in
+          helper (tuple::so_far) (curr_add+2) rest
+      |Number (Int n) :: rest -> 
+          let tuple = (Number(Int n),curr_add,[t_integer;n]) in
+          helper (tuple::so_far) (curr_add+2) rest
+      (*|Number x ->raise X_not_yet_implemented*)
+      |Char c :: rest ->
+        let tuple = (Char c,curr_add,[t_char; Char.code c]) in
+        helper (tuple::so_far) (curr_add+2) rest
+      |String str :: rest ->
+        let chars_codes=List.map Char.code (string_to_list str) in
+        let chars_codes = t_string:: List.length chars_codes :: chars_codes in
+        let tuple = (String str,curr_add,  chars_codes) in
+        helper (tuple::so_far) (curr_add+List.length chars_codes) rest
+      |Symbol str :: rest ->
+        let chars_codes=List.map Char.code (string_to_list str) in
+        let chars_codes = t_symbol:: List.length chars_codes :: chars_codes in
+        let tuple = (Symbol str,curr_add, chars_codes) in
+        helper (tuple::so_far) (curr_add+List.length chars_codes) rest
+
+
+      |e::rest -> 
+          let a,b = if e = Nil then (Nil,t_nil) else (Void,t_void) in
+          let tuple = (a,curr_add,[b]) in
+          helper (tuple::so_far) (curr_add+1) rest
+       in
+   tble := List.rev( helper [] const_tble lst)
+  ;;
+  let addr_table () =
+    let tble = List.map (fun(_,_,z) -> z) (table()) in
+    let tble = List.flatten tble in
+    tble;;
+
+end;;
 module type CODE_GEN = sig
   val code_gen: expr' -> string
   val compile_scheme_file: string -> string -> unit
@@ -1146,13 +1216,7 @@ let gen_label s =
   count := !count +1;
   ans;; 
 
-let symbol_table= Hashtbl.create 10;;
-let init_table()=
-  let add y z = Hashtbl.add symbol_table y z in
-  add "+" "PLUS";
-  add "car" "CAR";
-  add "cdr" "CDR";
-;; 
+
   
 let start_of_function,end_function  = 
   "PUSH(FP);\nMOV(FP,SP);\n","POP(FP);\nRETURN;\n";;
@@ -1290,82 +1354,54 @@ let applic_tp_suffix arg_sz  =
   "SUB(R2,(FPARG(1)+4)); \n" ^
   "MOV(R3,FP); \n" ^
   "MOV(FP,FPARG(-2));\n" ^
-  "MOV(R5,R3+"^arg_sz^"+4); \n" ^
+  "MOV(R5,R3+"^arg_sz^"+3); \n" ^
   lbl ^":\n"^
-  "BP;" ^
   "CMP(R3,R5); \n"^
   "JUMP_EQ("^lbl_jmp^"); \n"^
-  " MOV(IND(R2),IND(FP)); \n"^
+  " MOV(STACK(R2),STACK(R3)); \n"^
   " ADD(R3,1); \n" ^
   " ADD(R2,1); \n" ^
   " JUMP("^lbl^"); \n"^
   lbl_jmp^": \n" ^
+  "MOV(SP,R2); \n" ^ 
   "JUMPA(INDD(R0,2)); \n"
+;;
+
+let construct_constants_table exprs =
+  let rec remove_dups = function
+    |[]->[]
+    |x::xs -> if List.mem x xs then remove_dups xs else x :: remove_dups xs in
+
+  let rec top_sort = function
+    |Pair(a,b) -> top_sort a @ top_sort b @ [Pair (a,b)] 
+    |e -> [e] in
+  let rec consts = function
+    |Const' e-> [e]
+    |BoxSet'(_,e) |Set'(_,e) |Def' (_,e) -> consts e
+    |If'(test,dit,dif) -> consts test @ consts dit @ consts dif 
+    |Seq' exprs | Or' exprs ->List.fold_left (fun a b -> a @ consts b) [] exprs
+    |LambdaOpt'(_,_,e)|LambdaSimple'(_,e) -> consts e
+    |Applic'(proc,argl) | ApplicTP'(proc,argl) -> 
+       consts proc @ (List.fold_left (fun a b-> a @ consts b) [] argl)
+    | _ -> []
+  in
+ let init = List.map fst SYSTEM_CONSTANTS.init in
+ let all_consts = List.fold_left (fun a b-> 
+                               a @ consts b) init exprs in
+ let all_consts = remove_dups all_consts in
+ let after_sort = List.rev (List.flatten (List.map top_sort all_consts)) in
+
+ SYSTEM_CONSTANTS.create_table (List.rev (remove_dups after_sort))
+
+;; 
+      
 
 
 let code_gen e =
-  let mv_const s = "MOV(R0," ^  s ^ "\n" in 
-  let rec sexpr_gen e = 
-    match e with
-      |Void  -> "CALL(MAKE_SOB_VOID);\n"
-      |Bool b ->
-          let b = if b then "1" else "0" in
-          (push_imm b) ^ "CALL(MAKE_SOB_BOOL); \n DROP(1);"
-        
-      |Nil -> "CALL(MAKE_SOB_NIL); \n" 
-      |Number (Int x) -> 
-          let xstr = string_of_int x in 
-             push_imm xstr ^ 
-             "CALL(MAKE_SOB_INTEGER);\n" ^
-             "DROP(1);\n"
-      |Number (Fraction{numerator=a;denominator=b}) ->
-          let a,b = string_of_int a, string_of_int b in
-          push_imm b ^ push_imm a ^ 
-          "CALL(MAKE_SOB_INTEGER);
-           DROP(1);
-           MOV(R1,INDD(R0,1));
-           CALL(MAKE_SOB_INTEGER);
-           MOV(R0, INDD(R0,1)); //now r0 holds the value of b
-           DIV(R1,R0);
-           PUSH(R1);
-           CALL(MAKE_SOB_INTEGER);
-           DROP(1); \n"
-      |Char e -> 
-          let e = string_of_int (Char.code e) in
-          push_imm e ^ 
-          "CALL(MAKE_SOB_CHAR);\nDROP(1); \n"
-      |String s->
-          let n = string_of_int (String.length s) in
-          let chars = string_to_list s in
-          let prefix,suffix = "" ,push_imm n ^ "CALL(MAKE_SOB_STRING) \n"^
-            "DROP(1+"^n^")" in
-          prefix ^
-          List.fold_left
-            (fun a b ->
-              let b = string_of_int(Char.code b) in
-              a ^ push_imm b 
-            )
-            "" chars  ^ suffix 
-
-      |Symbol e -> raise (err "not sure what to do with symbol")
-      |Pair(car,cdr) ->
-          let ecar,ecdr = sexpr_gen car, sexpr_gen  cdr in
-          ecdr  
-          ^"PUSH(R0);\n" 
-          ^ ecar ^
-          "PUSH(R0);\n"^
-          "CALL(MAKE_SOB_PAIR); \n"^
-          "DROP(2);\n" 
-      |Vector ls ->
-          let n = string_of_int(List.length ls) in
-          let prefix,suffix = "" ,push_imm n ^ "CALL(MAKE_SOB_VECTOR) \n"^
-            "DROP(1+"^n^")" in
-          prefix ^
-          List.fold_left
-            (fun a b ->
-              let aprog = sexpr_gen b in
-              a   ^ aprog ^"PUSH(R0); \n")
-            "" ls  ^ suffix
+  let rec sexpr_gen e =
+    let addr= 
+      string_of_int (SYSTEM_CONSTANTS.find e (SYSTEM_CONSTANTS.table())) in
+    "MOV(R0,IMM("^addr^"))" 
   in
   let delta = 2 in
   let var_gen = function
@@ -1427,7 +1463,7 @@ let code_gen e =
              a ^ "\n" ^b)
           ""
           exprs
-    | _ -> raise X_not_yet_implemented in 
+    | _ ->  raise X_not_yet_implemented in 
         
           
        
@@ -1438,13 +1474,26 @@ let code_gen e =
 
 open IO;;
 let init()=
-   file_to_string "prologue.c", file_to_string "epilogue.c";;
+   let prol,epi = file_to_string "prologue.c", file_to_string "epilogue.c" in
+   let tbl = (SYSTEM_CONSTANTS.addr_table()) in
+   let sz = string_of_int (List.length tbl) in
+   let malloc =  
+    "PUSH(IMM("^sz^"+1)); \n" ^
+   "CALL(MALLOC); \n" ^
+   "DROP(1); \n \n" in
+   List.fold_left
+     (fun a b ->
+       let b = string_of_int b in
+       a ^ "MOV(IND(R0),IMM("^b^"));\n INCR(R0);\n") 
+     (prol ^ malloc) tbl, epi;;
+
 
 let compile_scheme_file scm_source_file asm_target_file =
-  let prologue,epilogue = init() in
   let str = file_to_string scm_source_file in
   let exprs = Tag_Parser.read_expressions str in
   let exprs = List.map Semantics.run_semantics exprs in
+  let () = construct_constants_table exprs in
+  let prologue,epilogue = init() in
   let asm_strs = List.map code_gen exprs in
   let asm_str = List.fold_left 
       (fun a b-> a ^ "\n /*new expr */ \n \n" ^ b) 
@@ -1463,6 +1512,9 @@ let tst = compose tst Tag_Parser.read_expression;;
 let printtst x = 
   let x= tst x in
   Printf.printf "%s" x;;
+let rd_expz str =
+  let sz = Tag_Parser.read_expressions str in
+  List.map Semantics.run_semantics sz;;
 
 
-
+Code_Gen.compile_scheme_file "foo.scm" "goo.c";;
