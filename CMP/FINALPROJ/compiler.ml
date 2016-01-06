@@ -1143,6 +1143,9 @@ module SYSTEM_CONSTANTS = struct
              (Nil,[t_nil]);
              (Bool false,[t_bool; 0]);
              (Bool true,[t_bool; 1]);];;
+
+
+
   let rec find expr  = function 
     |[] -> raise (err "something is wrong with the topilogical sort")
     |(a,b,c)::xs -> if a=expr then b else find expr xs;;
@@ -1157,7 +1160,8 @@ module SYSTEM_CONSTANTS = struct
                        [t_pair;find a so_far; find b so_far]) in
           helper (tuple::so_far) (curr_add+3) rest 
       |Vector exprs :: rest ->
-        let lst = t_vector :: List.map (fun (x,_,_)->find x so_far) so_far in
+        let lst = List.map (fun x->find x so_far) exprs in
+        let lst = t_vector :: List.length lst :: lst in
         let tuple = (Vector exprs, curr_add, lst) in
         helper (tuple ::so_far) (curr_add + List.length lst) rest
       |Bool e :: rest-> 
@@ -1195,13 +1199,40 @@ module SYSTEM_CONSTANTS = struct
     let tble = List.flatten tble in
     tble;;
 
+let get_const_prims () =
+  let adds =  List.map
+   (fun (a,_) -> string_of_int (find a !tble)) init in
+  "#define VOID " ^ List.nth adds 0 ^ "\n" ^
+  "#define NIL " ^ List.nth adds 1 ^ "\n" ^
+  "#define FALSE " ^ List.nth adds 2 ^ "\n" ^
+  "#define TRUE  " ^ List.nth adds 3 ^ "\n"    
+;;
+end
+;;
+
+module GLOBAL_ENV = struct
+  let global = ref [];;
+  let get_env () = !global;;
+  let add_prims = (*cons car cdr +*)
+    ["car";"cdr";"cons";"+";"null?"]
+  let create_global_env lst =
+    let rec helper curr_add acc = function
+      |[] ->acc
+      |Def'(Var' (VarFree' s), _)::rest->
+          helper (curr_add+1) ((s,curr_add)::acc) rest
+      |_::rest->helper curr_add acc rest in
+    let off_set = 1 + List.length (SYSTEM_CONSTANTS.addr_table()) in
+    let env = List.rev(helper off_set !global lst) in
+
+    global := env;
+    env;;
 end;;
+
 module type CODE_GEN = sig
   val code_gen: expr' -> string
   val compile_scheme_file: string -> string -> unit
 end
 ;;
-
 module Code_Gen : CODE_GEN = struct
 
 let asm_comment s = 
@@ -1374,6 +1405,11 @@ let construct_constants_table exprs =
 
   let rec top_sort = function
     |Pair(a,b) -> top_sort a @ top_sort b @ [Pair (a,b)] 
+    |Vector ls -> 
+        List.fold_left 
+          (fun a b -> 
+              a @ top_sort b)
+          [] ls @ [Vector ls]           
     |e -> [e] in
   let rec consts = function
     |Const' e-> [e]
@@ -1385,13 +1421,12 @@ let construct_constants_table exprs =
        consts proc @ (List.fold_left (fun a b-> a @ consts b) [] argl)
     | _ -> []
   in
- let init = List.map fst SYSTEM_CONSTANTS.init in
- let all_consts = List.fold_left (fun a b-> 
+  let init = List.map fst SYSTEM_CONSTANTS.init in
+  let all_consts = List.fold_left (fun a b-> 
                                a @ consts b) init exprs in
- let all_consts = remove_dups all_consts in
- let after_sort = List.rev (List.flatten (List.map top_sort all_consts)) in
-
- SYSTEM_CONSTANTS.create_table (List.rev (remove_dups after_sort))
+  let all_consts = remove_dups all_consts in
+  let after_sort = List.rev (List.flatten (List.map top_sort all_consts)) in
+  SYSTEM_CONSTANTS.create_table (List.rev (remove_dups after_sort))
 
 ;; 
       
@@ -1401,11 +1436,17 @@ let code_gen e =
   let rec sexpr_gen e =
     let addr= 
       string_of_int (SYSTEM_CONSTANTS.find e (SYSTEM_CONSTANTS.table())) in
-    "MOV(R0,IMM("^addr^"))" 
+    "MOV(R0,IMM("^addr^")); \n" 
   in
   let delta = 2 in
   let var_gen = function
-    |VarFree' v -> raise X_not_yet_implemented
+    |VarFree' v -> 
+        let global = GLOBAL_ENV.get_env() in
+        if List.mem_assoc v global then
+          let add = string_of_int(List.assoc v global) in 
+          "MOV(R0,IND("^add^")); \n"
+        else "printf(\"Exception: variable " ^v ^" is not bound\\n \"); \n"^
+        "exit(12);"
     |VarParam' (name,minor) ->
         let minor = minor+delta in 
         "MOV(R0,FPARG("^(string_of_int minor) ^"));\n" 
@@ -1436,7 +1477,7 @@ let code_gen e =
        let lambda_start=start_of_lambda label labelexit env_sz in
        lambda_start^lambda_op_fix (List.length params)^run (params::depth) bdy^
        end_function^labelexit^": //OUT OF LAMBDA \n"
-        
+       
 
     |Applic'(proc,argl) ->
        let applic_bdy = applic_bdy (run depth) argl proc in
@@ -1450,7 +1491,7 @@ let code_gen e =
         let tst_prog,dit_prog,dif_prog =
           run depth test,run depth dit, run depth dif in
         let label_else,label_ifexit = gen_label "else", gen_label "if_exit" in
-        let cmp_s,jmp_eq,jmp_ex = "\nCMP(R0,FALSE_ADDR);\n",
+        let cmp_s,jmp_eq,jmp_ex = "\nCMP(R0,FALSE);\n",
                                   "\nJUMP_EQ("^label_else^");\n",
                                   "\nJUMP("^label_ifexit^");\n" in
        tst_prog ^ cmp_s ^ jmp_eq ^ dit_prog ^ jmp_ex
@@ -1463,7 +1504,12 @@ let code_gen e =
              a ^ "\n" ^b)
           ""
           exprs
-    | _ ->  raise X_not_yet_implemented in 
+    |Def' (Var' (VarFree' a), e) ->
+        let val_e = run depth e in
+        let global = GLOBAL_ENV.get_env() in
+        let addr = string_of_int (List.assoc a global) in
+        val_e ^ "\n MOV(IND("^addr^"), R0);\n"^ "MOV(R0,VOID); \n" 
+    | _ ->  "pieieieiei" in 
         
           
        
@@ -1473,33 +1519,37 @@ let code_gen e =
 
 
 open IO;;
-let init()=
+let init const_tbl global_tbl=
    let prol,epi = file_to_string "prologue.c", file_to_string "epilogue.c" in
-   let tbl = (SYSTEM_CONSTANTS.addr_table()) in
-   let sz = string_of_int (List.length tbl) in
+   let sz = string_of_int ( List.length const_tbl + List.length global_tbl) in
+   let tble = const_tbl @ List.map snd global_tbl in
    let malloc =  
     "PUSH(IMM("^sz^"+1)); \n" ^
    "CALL(MALLOC); \n" ^
    "DROP(1); \n \n" in
+   let tables = 
    List.fold_left
      (fun a b ->
        let b = string_of_int b in
        a ^ "MOV(IND(R0),IMM("^b^"));\n INCR(R0);\n") 
-     (prol ^ malloc) tbl, epi;;
-
-
+     (prol ^ malloc) tble in 
+    let constants = SYSTEM_CONSTANTS.get_const_prims() in 
+    tables ^ "\n" ^ constants , epi
+;;
 let compile_scheme_file scm_source_file asm_target_file =
-  let str = file_to_string scm_source_file in
-  let exprs = Tag_Parser.read_expressions str in
-  let exprs = List.map Semantics.run_semantics exprs in
-  let () = construct_constants_table exprs in
-  let prologue,epilogue = init() in
-  let asm_strs = List.map code_gen exprs in
-  let asm_str = List.fold_left 
+  let str=file_to_string scm_source_file in
+  let exprs=Tag_Parser.read_expressions str in
+  let exprs=List.map Semantics.run_semantics exprs in
+  let const_tbl=construct_constants_table exprs;
+                (SYSTEM_CONSTANTS.addr_table()) in
+  let global_tbl= GLOBAL_ENV.create_global_env exprs in
+  let prologue,epilogue=init const_tbl global_tbl in
+  let asm_strs=List.map code_gen exprs in
+  let asm_str=List.fold_left 
       (fun a b-> a ^ "\n /*new expr */ \n \n" ^ b) 
       prologue 
       asm_strs in
-  let asm_str = asm_str ^ epilogue in
+  let asm_str=asm_str ^ epilogue in
   string_to_file asm_str asm_target_file
 
 ;;

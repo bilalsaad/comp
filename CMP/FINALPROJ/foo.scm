@@ -1,4 +1,14 @@
-((lambda(f)
-   ((lambda(x) (x x))
-    (lambda(x) (f (lambda (z) ((x x) z))))))
- (lambda(x) "moshe"))
+#;(define make_pair 
+  (lambda(a b)
+    (lambda(sel) (sel a b))))
+
+#;(define p1 (make_pair 1 2))
+
+#;(define kar
+  (lambda(p)
+    (p (lambda(a b) a))))
+#;(define kdr
+  (lambda (p)
+    (p (lambda (a b) b))))
+
+(if #f 1 3)

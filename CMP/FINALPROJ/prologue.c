@@ -8,7 +8,6 @@
 #define db {printf("LINE: %d\n",__LINE__);}
 #include "arch/cisc.h"
 #include "debug.h"
-
 int main()
 {
   START_MACHINE;
