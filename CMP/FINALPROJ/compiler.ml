@@ -909,7 +909,7 @@ let annotate_lexical_addresses e =
         else 
           helper 0 bvars
     | _ -> raise (err "missed a case in run wtf")     
-in              
+  in              
   run [] [] e
 
 ;;
@@ -1126,7 +1126,7 @@ let string_to_file out_string output_file =
 
 
 end;;
-module SYSTEM_CONSTANTS = struct 
+module Constants = struct 
   let t_void=		937610;;
   let t_nil =	722689;;
   let t_bool= 		741553;;
@@ -1199,7 +1199,7 @@ module SYSTEM_CONSTANTS = struct
     let tble = List.flatten tble in
     tble;;
 
-let get_const_prims () =
+ let get_const_prims () =
   let adds =  List.map
    (fun (a,_) -> string_of_int (find a !tble)) init in
   "#define VOID " ^ List.nth adds 0 ^ "\n" ^
@@ -1207,25 +1207,66 @@ let get_const_prims () =
   "#define FALSE " ^ List.nth adds 2 ^ "\n" ^
   "#define TRUE  " ^ List.nth adds 3 ^ "\n"    
 ;;
+  let reset_const_tbl() =
+    tble := [];;
 end
 ;;
 
-module GLOBAL_ENV = struct
+module Global_Env = struct
   let global = ref [];;
   let get_env () = !global;;
-  let add_prims = (*cons car cdr +*)
-    ["car";"cdr";"cons";"+";"null?"]
+  let prims = (*cons car cdr +*)
+    ["car";"cdr";"cons";"plus";"minus";"is_zero";"is_null";"mul"]
   let create_global_env lst =
     let rec helper curr_add acc = function
       |[] ->acc
       |Def'(Var' (VarFree' s), _)::rest->
           helper (curr_add+1) ((s,curr_add)::acc) rest
       |_::rest->helper curr_add acc rest in
-    let off_set = 1 + List.length (SYSTEM_CONSTANTS.addr_table()) in
-    let env = List.rev(helper off_set !global lst) in
+    let off_set = 1 + List.length (Constants.addr_table()) in
+    let prims = List.mapi (fun a b -> (b, off_set+a)) prims in
+    let off_set = off_set +List.length prims in
+    let env = prims @ List.rev(helper off_set !global lst) in
 
-    global := env;
+    global :=env;
     env;;
+  let foo () =
+    let env = get_env() in
+    let closure_creation = 
+    List.fold_left 
+      (fun a b -> 
+        let b_add = string_of_int (List.assoc b env) in
+        let s =
+          "MOV(IND("^b_add^"),R0);\n" ^ 
+          "MOV(IND(R0), IMM(T_CLOSURE)); \n" ^
+          "INCR(R0);\n" ^
+          "MOV(IND(R0),IMM(2131));\n" ^
+          "INCR(R0); \n" ^
+          "MOV(IND(R0), LABEL(L_"^b^"));\n"^
+          "INCR(R0); \n" in 
+
+        a  ^  s)
+           "/* STARTING TO ADD PRIMITIVES */ \n" prims 
+        in
+        closure_creation;;
+        (*
+    let closure_prefix =
+      List.fold_left 
+      (fun a b -> 
+        let b_add = string_of_int (List.assoc b env) in
+        let s =
+          "/* making " ^ b^" */ \n" ^ 
+          "MOV(IND("^b_add^"),R0);\n" ^  
+          "INCR(R0);\n" in 
+
+        a  ^  s) "\n\n/* dummy-values for prims */ \n " prims in
+        closure_prefix ^ closure_creation *)
+    (*resets the global env, should be done after each compilation of a file*)      
+  let reset_env () = 
+    global:= [] 
+  ;;
+
+
 end;;
 
 module type CODE_GEN = sig
@@ -1275,7 +1316,7 @@ let start_of_lambda label labelexit env_sz =
    "DROP(1); \n" ^
    "MOV(INDD(R0,0),T_CLOSURE);\n"^
    "MOV(INDD(R0,1),R1); \n"^
-   "MOV(INDD(R0,2),&&"^label^");\n" ^
+   "MOV(INDD(R0,2),LABEL("^label^"));\n" ^
    "JUMP(" ^labelexit ^"); \n"^
    label^":\n"^
      start_of_function 
@@ -1289,8 +1330,7 @@ let lambda_op_fix p =
   let stck_fix2, stck_fix3 = gen_label "empty_opt_case",gen_label "empty_opt"in
   let fin_sck2 = gen_label "end_of_nil_case_opt" in
   "MOV(R1,FPARG(1)); \n"^
-  "CALL(MAKE_SOB_NIL); \n" ^
-  "MOV(R2,R0); \n" ^ 
+  "MOV(R2,NIL); \n" ^ 
   loop_label ^ ":\n" ^
   " CMP(R1,"^p^");\n" ^
   " JUMP_EQ("^fin_label^"); \n" ^
@@ -1421,12 +1461,12 @@ let construct_constants_table exprs =
        consts proc @ (List.fold_left (fun a b-> a @ consts b) [] argl)
     | _ -> []
   in
-  let init = List.map fst SYSTEM_CONSTANTS.init in
+  let init = List.map fst Constants.init in
   let all_consts = List.fold_left (fun a b-> 
                                a @ consts b) init exprs in
   let all_consts = remove_dups all_consts in
   let after_sort = List.rev (List.flatten (List.map top_sort all_consts)) in
-  SYSTEM_CONSTANTS.create_table (List.rev (remove_dups after_sort))
+  Constants.create_table (List.rev (remove_dups after_sort))
 
 ;; 
       
@@ -1435,13 +1475,13 @@ let construct_constants_table exprs =
 let code_gen e =
   let rec sexpr_gen e =
     let addr= 
-      string_of_int (SYSTEM_CONSTANTS.find e (SYSTEM_CONSTANTS.table())) in
+      string_of_int (Constants.find e (Constants.table())) in
     "MOV(R0,IMM("^addr^")); \n" 
   in
   let delta = 2 in
   let var_gen = function
     |VarFree' v -> 
-        let global = GLOBAL_ENV.get_env() in
+        let global = Global_Env.get_env() in
         if List.mem_assoc v global then
           let add = string_of_int(List.assoc v global) in 
           "MOV(R0,IND("^add^")); \n"
@@ -1506,9 +1546,10 @@ let code_gen e =
           exprs
     |Def' (Var' (VarFree' a), e) ->
         let val_e = run depth e in
-        let global = GLOBAL_ENV.get_env() in
+        let global = Global_Env.get_env() in
         let addr = string_of_int (List.assoc a global) in
-        val_e ^ "\n MOV(IND("^addr^"), R0);\n"^ "MOV(R0,VOID); \n" 
+          asm_comment"IN DEFINE" ^
+          val_e ^ "\n MOV(IND("^addr^"), R0);\n"^ "MOV(R0,VOID); \n" 
     | _ ->  "pieieieiei" in 
         
           
@@ -1521,10 +1562,12 @@ let code_gen e =
 open IO;;
 let init const_tbl global_tbl=
    let prol,epi = file_to_string "prologue.c", file_to_string "epilogue.c" in
-   let sz = string_of_int ( List.length const_tbl + List.length global_tbl) in
+   let sz =
+     List.length const_tbl+5*List.length global_tbl in
+   let sz = string_of_int sz in
    let tble = const_tbl @ List.map snd global_tbl in
    let malloc =  
-    "PUSH(IMM("^sz^"+1)); \n" ^
+   "PUSH(IMM("^sz^"+1)); \n" ^
    "CALL(MALLOC); \n" ^
    "DROP(1); \n \n" in
    let tables = 
@@ -1533,16 +1576,17 @@ let init const_tbl global_tbl=
        let b = string_of_int b in
        a ^ "MOV(IND(R0),IMM("^b^"));\n INCR(R0);\n") 
      (prol ^ malloc) tble in 
-    let constants = SYSTEM_CONSTANTS.get_const_prims() in 
-    tables ^ "\n" ^ constants , epi
+    let constants = Constants.get_const_prims() in 
+    let prims = Global_Env.foo() in
+    constants ^ "\n" ^tables ^ "\n" ^ prims , epi
 ;;
 let compile_scheme_file scm_source_file asm_target_file =
   let str=file_to_string scm_source_file in
   let exprs=Tag_Parser.read_expressions str in
   let exprs=List.map Semantics.run_semantics exprs in
   let const_tbl=construct_constants_table exprs;
-                (SYSTEM_CONSTANTS.addr_table()) in
-  let global_tbl= GLOBAL_ENV.create_global_env exprs in
+                (Constants.addr_table()) in
+  let global_tbl= Global_Env.create_global_env exprs in
   let prologue,epilogue=init const_tbl global_tbl in
   let asm_strs=List.map code_gen exprs in
   let asm_str=List.fold_left 
@@ -1550,6 +1594,7 @@ let compile_scheme_file scm_source_file asm_target_file =
       prologue 
       asm_strs in
   let asm_str=asm_str ^ epilogue in
+  Constants.reset_const_tbl(); Global_Env.reset_env();
   string_to_file asm_str asm_target_file
 
 ;;
@@ -1566,5 +1611,7 @@ let rd_expz str =
   let sz = Tag_Parser.read_expressions str in
   List.map Semantics.run_semantics sz;;
 
-
-Code_Gen.compile_scheme_file "foo.scm" "goo.c";;
+let foo ()=  
+  Code_Gen.compile_scheme_file "foo.scm" "goo.c";
+  Sys.command "gcc -o out goo.c";
+  Sys.command "./out";;
