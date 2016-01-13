@@ -31,18 +31,21 @@
   (lambda s
     (fold s plus 0)))
 
-(+ 1 2 3 4 5 6 7 8 9 10)
+
+
 (define bin_eq
   (lambda (a b)
     (is_zero(minus a b))))
-(bin_eq 1 4)
-`(1 2 ,(fact 5)) 
+(define p (cons 1 (cons 2 '())))
+(+ 1 2 3 4 5 6 7 8 9 10)
 
-(define foo
+
+(define list?
   (lambda(e)
     (if (is_null e)
-         '()
-         `("cons" ,(foo (car e)) ,(foo (cdr e))))))
-(define p (cons 1 (cons 2 '())))
+        #t
+        (and (is_pair e) (list (cdr e))))))
 
-`("cons" ,(car p) ,(cdr p))
+(list? '())
+(is_list '())
+

@@ -1138,7 +1138,8 @@ module Constants = struct
   let t_vector =	335728;;
   let t_closure =	276405;;
   let t_rational = 235937;;
-  let const_tble = 1;;
+  let const_tble = 2;;
+  let string_list = const_tble-1;;
   let init= [(Void,[t_void]);
              (Nil,[t_nil]);
              (Bool false,[t_bool; 0]);
@@ -1181,10 +1182,9 @@ module Constants = struct
         let tuple = (String str,curr_add,  chars_codes) in
         helper (tuple::so_far) (curr_add+List.length chars_codes) rest
       |Symbol str :: rest ->
-        let chars_codes=List.map Char.code (string_to_list str) in
-        let chars_codes = t_symbol:: List.length chars_codes :: chars_codes in
-        let tuple = (Symbol str,curr_add, chars_codes) in
-        helper (tuple::so_far) (curr_add+List.length chars_codes) rest
+        let in_mem = [t_symbol; find (String str) so_far] in
+        let tuple = (Symbol str,curr_add, in_mem) in
+        helper (tuple::so_far) (curr_add+List.length in_mem) rest
 
 
       |e::rest -> 
@@ -1209,21 +1209,44 @@ module Constants = struct
 ;;
   let reset_const_tbl() =
     tble := [];;
-end
+  let create_string_list()=
+    let const_tbl=table() in
+    let symbols=List.filter (fun(_,_,c)->List.hd c=t_symbol) const_tbl in 
+    if symbols <> [] then
+      let string_addresses = List.map (fun (_,_,c) -> List.nth c 1) symbols in
+      let mov_str b_add =         
+          "MOV(INDD(R0,0), IMM("^b_add^")); \n"^
+          "MOV(R1,R0); \n"^
+          "ADD(R0,IMM(2)); \n" in
+      let init_str = 
+      "MOV(IND("^string_of_int string_list^"),R0); \n"^ 
+      mov_str (string_of_int (List.hd string_addresses)) in         
+      List.fold_left
+        (fun a b->
+          let b_add = string_of_int b in
+            a^
+            "MOV(INDD(R1,1),R0); \n"^
+            mov_str b_add)
+        init_str (List.tl string_addresses) , List.length symbols 
+     else "",0         
 ;;
-
+end;;
 module Global_Env = struct
   let global = ref [];;
   let get_env () = !global;;
   let prims = (*cons car cdr +*)
-    ["car";"cdr";"cons";"plus";"minus";"is_zero";"is_null";"mul"]
+    ["car";"cdr";"cons";"plus";
+    "minus";"is_zero";"is_null";
+    "mul";"is_list";"is_pair";
+    "v_plus";"v_minus";"v_mult";
+    "v_div";"vector";"apply";"make_string"];;
   let create_global_env lst =
     let rec helper curr_add acc = function
       |[] ->acc
       |Def'(Var' (VarFree' s), _)::rest->
           helper (curr_add+1) ((s,curr_add)::acc) rest
       |_::rest->helper curr_add acc rest in
-    let off_set = 1 + List.length (Constants.addr_table()) in
+    let off_set=1+Constants.const_tble+List.length (Constants.addr_table()) in
     let prims = List.mapi (fun a b -> (b, off_set+a)) prims in
     let off_set = off_set +List.length prims in
     let env = prims @ List.rev(helper off_set !global lst) in
@@ -1445,6 +1468,7 @@ let construct_constants_table exprs =
 
   let rec top_sort = function
     |Pair(a,b) -> top_sort a @ top_sort b @ [Pair (a,b)] 
+    |Symbol s -> [String s; Symbol s]
     |Vector ls -> 
         List.fold_left 
           (fun a b -> 
@@ -1484,7 +1508,9 @@ let code_gen e =
         let global = Global_Env.get_env() in
         if List.mem_assoc v global then
           let add = string_of_int(List.assoc v global) in 
-          "MOV(R0,IND("^add^")); \n"
+          "MOV(R0,IND("^add^")); \n"^
+          "CMP(R0,T_UNDEFINED); \n"^
+          "JUMP_EQ(UNDEFINED_VARIABLE_ERROR);\n" 
         else "printf(\"Exception: variable " ^v ^" is not bound\\n \"); \n"^
         "exit(12);"
     |VarParam' (name,minor) ->
@@ -1560,25 +1586,35 @@ let code_gen e =
 
 
 open IO;;
-let init const_tbl global_tbl=
+let init const_table global_tbl=
    let prol,epi = file_to_string "prologue.c", file_to_string "epilogue.c" in
+   let string_lst,strs_len = Constants.create_string_list() in
    let sz =
-     List.length const_tbl+5*List.length global_tbl in
+     List.length const_table+5*List.length global_tbl+2*strs_len in
    let sz = string_of_int sz in
-   let tble = const_tbl @ List.map snd global_tbl in
+   let ge =  List.map snd global_tbl in
    let malloc =  
    "PUSH(IMM("^sz^"+1)); \n" ^
    "CALL(MALLOC); \n" ^
+   "MOV(R0,IMM("^string_of_int Constants.const_tble ^ ")); \n" ^
    "DROP(1); \n \n" in
    let tables = 
-   List.fold_left
+   (List.fold_left
      (fun a b ->
        let b = string_of_int b in
        a ^ "MOV(IND(R0),IMM("^b^"));\n INCR(R0);\n") 
-     (prol ^ malloc) tble in 
+     (prol ^ malloc) const_table) ^ 
+       
+    (List.fold_left (fun a b->
+     a^ "MOV(IND(R0),IMM(T_UNDEFINED)); INCR(R0); \n") 
+    "\n /*starting global env------------*/ \n" 
+    ge)
+    in 
+   
     let constants = Constants.get_const_prims() in 
     let prims = Global_Env.foo() in
-    constants ^ "\n" ^tables ^ "\n" ^ prims , epi
+
+    constants^"\n"^tables^"\n"^prims^"\n"^string_lst ^"\n", epi
 ;;
 let compile_scheme_file scm_source_file asm_target_file =
   let str=file_to_string scm_source_file in
