@@ -1202,6 +1202,7 @@ module Constants = struct
  let get_const_prims () =
   let adds =  List.map
    (fun (a,_) -> string_of_int (find a !tble)) init in
+  "#define SYMBOL_TABLE " ^ string_of_int string_list ^ "\n" ^
   "#define VOID " ^ List.nth adds 0 ^ "\n" ^
   "#define NIL " ^ List.nth adds 1 ^ "\n" ^
   "#define FALSE " ^ List.nth adds 2 ^ "\n" ^
@@ -1227,8 +1228,15 @@ module Constants = struct
             a^
             "MOV(INDD(R1,1),R0); \n"^
             mov_str b_add)
-        init_str (List.tl string_addresses) , List.length symbols 
-     else "",0         
+        init_str (List.tl string_addresses)^mov_str "T_UNDEFINED" 
+        , List.length symbols 
+    else 
+
+      "MOV(INDD(R0,0),IMM(T_UNDEFINED)); \n"^
+      "MOV(INDD(R0,1),IMM(205774250)); \n"^
+      "MOV(IND(SYMBOL_TABLE),R0); \n" 
+    
+    ,1         
 ;;
 end;;
 module Global_Env = struct
@@ -1239,7 +1247,11 @@ module Global_Env = struct
     "minus";"is_zero";"is_null";
     "mul";"is_list";"is_pair";
     "v_plus";"v_minus";"v_mult";
-    "v_div";"vector";"apply";"make_string"];;
+    "v_div";"vector";"apply";
+    "make_string";"is_eq";
+    "v_lt";"v_gt";"v_eq";
+    "string_to_symbol";
+    "symbol_to_string";"make_vector"];;
   let create_global_env lst =
     let rec helper curr_add acc = function
       |[] ->acc
@@ -1272,18 +1284,7 @@ module Global_Env = struct
            "/* STARTING TO ADD PRIMITIVES */ \n" prims 
         in
         closure_creation;;
-        (*
-    let closure_prefix =
-      List.fold_left 
-      (fun a b -> 
-        let b_add = string_of_int (List.assoc b env) in
-        let s =
-          "/* making " ^ b^" */ \n" ^ 
-          "MOV(IND("^b_add^"),R0);\n" ^  
-          "INCR(R0);\n" in 
 
-        a  ^  s) "\n\n/* dummy-values for prims */ \n " prims in
-        closure_prefix ^ closure_creation *)
     (*resets the global env, should be done after each compilation of a file*)      
   let reset_env () = 
     global:= [] 
@@ -1614,10 +1615,11 @@ let init const_table global_tbl=
     let constants = Constants.get_const_prims() in 
     let prims = Global_Env.foo() in
 
-    constants^"\n"^tables^"\n"^prims^"\n"^string_lst ^"\n", epi
+    constants^"\n"^tables^"\n"^prims^"\n //STRING LIST \n"^string_lst ^"\n", epi
 ;;
 let compile_scheme_file scm_source_file asm_target_file =
-  let str=file_to_string scm_source_file in
+  let helper_code = file_to_string "helper_functions.scm" in
+  let str= helper_code ^ file_to_string scm_source_file in
   let exprs=Tag_Parser.read_expressions str in
   let exprs=List.map Semantics.run_semantics exprs in
   let const_tbl=construct_constants_table exprs;

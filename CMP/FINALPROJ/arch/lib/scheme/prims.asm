@@ -201,6 +201,82 @@ CALL(MAKE_SOB_INTEGER);
 DROP(1);
 FUNC_END;
 
+L_v_less_than_old:
+FUNC_START;
+MOV(R1,PARAM(0));
+MOV(R0,TRUE);
+L_v_less_than_loop:
+  MOV(R2,INDD(R1,1)); //holds previous value
+  MOV(R1,INDD(R1,2));  
+  CMP(R1,NIL);
+  JUMP_EQ(L_v_less_than_finish);
+  MOV(R3,INDD(R1,1));
+  CMP(INDD(R2,1), INDD(R3,1));
+  JUMP_GT(L_v_less_than_false)
+  JUMP(L_v_less_than_loop);
+L_v_less_than_false:
+  MOV(R0,FALSE);
+L_v_less_than_finish:
+FUNC_END;
+
+L_v_lt:
+FUNC_START;
+MOV(R1,NUMBER);
+MOV(R2,1);
+MOV(R0,TRUE);
+L_v_lt_loop:
+  CMP(R1,R2);
+  JUMP_EQ(L_v_lt_finish);
+  MOV(R3,PARAM(R2-1));
+  MOV(R4,PARAM(R2));
+  CMP(INDD(R3,1),INDD(R4,1));
+  JUMP_GE(L_v_lt_false);
+  INCR(R2);
+  JUMP(L_v_lt_loop);
+L_v_lt_false:
+MOV(R0,FALSE);
+L_v_lt_finish:
+FUNC_END;
+
+
+L_v_gt:
+FUNC_START;
+MOV(R1,NUMBER);
+MOV(R2,1);
+MOV(R0,TRUE);
+L_v_gt_loop:
+  CMP(R1,R2);
+  JUMP_EQ(L_v_gt_finish);
+  MOV(R3,PARAM(R2-1));
+  MOV(R4,PARAM(R2));
+  CMP(INDD(R3,1),INDD(R4,1));
+  JUMP_LE(L_v_gt_false);
+  INCR(R2);
+  JUMP(L_v_gt_loop);
+L_v_gt_false:
+MOV(R0,FALSE);
+L_v_gt_finish:
+FUNC_END;
+
+L_v_eq:
+FUNC_START;
+MOV(R1,NUMBER);
+MOV(R2,1);
+MOV(R0,TRUE);
+L_v_eq_loop:
+  CMP(R1,R2);
+  JUMP_EQ(L_v_eq_finish);
+  MOV(R3,PARAM(R2-1));
+  MOV(R4,PARAM(R2));
+  CMP(INDD(R3,1),INDD(R4,1));
+  JUMP_NE(L_v_eq_false);
+  INCR(R2);
+  JUMP(L_v_eq_loop);
+L_v_eq_false:
+MOV(R0,FALSE);
+L_v_eq_finish:
+FUNC_END;
+
 /*variadic div function pew pew */
 L_v_div:
 FUNC_START;
@@ -246,21 +322,47 @@ RETURN;
 /*make-string given a char and a number, it will make a string hopefully*/
 L_make_string:
 FUNC_START;
+db;
 CHECK_ARGS(2);
-CHECK_TYPE(PARAM(0),T_INTEGER);
-CHECK_TYPE(PARAM(1),T_CHAR);
+CHECK_TYPE(T_INTEGER,PARAM(0));
+CHECK_TYPE(T_CHAR,PARAM(1));
 MOV(R3,IMM(0));
-MOV(R4,NUMBER);
+MOV(R4,PARAM(0));
+MOV(R4,INDD(R4,1));
+MOV(R5,PARAM(1));
+MOV(R5,INDD(R5,1));
 L_make_string_loop:
  CMP(R3,R4);
  JUMP_EQ(L_make_string_finish)
- PUSH(PARAM(R3)); 
+ PUSH(R5); 
  INCR(R3); 
  JUMP(L_make_string_loop);
 L_make_string_finish:
 PUSH(R4)
 CALL(MAKE_SOB_STRING);
-DROP(NUMBER+1)
+DROP(R4+1)
+POP(FP);
+RETURN;
+
+
+L_make_vector:
+FUNC_START;
+db;
+CHECK_ARGS(2);
+MOV(R3,IMM(0));
+MOV(R4,PARAM(0));
+MOV(R4,INDD(R4,1));
+MOV(R5,PARAM(1));
+L_make_vector_loop:
+ CMP(R3,R4);
+ JUMP_EQ(L_make_vector_finish)
+ PUSH(R5); 
+ INCR(R3); 
+ JUMP(L_make_vector_loop);
+L_make_vector_finish:
+PUSH(R4)
+CALL(MAKE_SOB_VECTOR);
+DROP(R4+1)
 POP(FP);
 RETURN;
 
@@ -333,12 +435,96 @@ L_apply_write_fin:
 // 2+2=4 mod 12
 //Now we must update the SP, else we'll have BUGS
 MOV(SP,R3);
-db;
 JUMPA(INDD(R4,2)); //fml
 
 FUNC_END;
 
+//compares two strings, deeply
+COMPARE_STRINGS:
+FUNC_START;
+PUSH(R1);
+PUSH(R2);
+PUSH(R3);
+PUSH(R4);
+MOV(R0,FALSE);
+MOV(R1, FPARG(0)); //first string
+MOV(R2, FPARG(1)); //second string
 
+CMP(INDD(R1,1),INDD(R2,1));
+JUMP_NE(L_compare_strings_finish);
+MOV(R3,INDD(R1,1)); //size of the strings
+ADD(R3,2);
+MOV(R4,2);
+L_compare_strings_loop:
+CMP(R4,R3);
+JUMP_EQ(L_compare_strings_true)
+CMP(INDD(R1,R4),INDD(R2,R4));
+JUMP_NE(L_compare_strings_finish);
+INCR(R4);
+JUMP(L_compare_strings_loop);
+
+L_compare_strings_true:
+MOV(R0,TRUE);
+L_compare_strings_finish:
+
+POP(R4);
+POP(R3);
+POP(R2);
+POP(R1)
+FUNC_END;
+
+
+L_string_to_symbol:
+FUNC_START;
+
+CHECK_ARGS(1);
+CHECK_TYPE(T_STRING,PARAM(0));
+PUSH(IMM(2));
+CALL(MALLOC);
+DROP(1);
+MOV(R3,R0);
+MOV(IND(R3),IMM(T_SYMBOL));
+MOV(R2,PARAM(0));
+MOV(R1,IND(SYMBOL_TABLE)); //points to the beginning of the symbol table
+
+L_string_to_symbol_loop1:
+CMP(IND(R1),IMM(T_UNDEFINED));
+JUMP_EQ(L_string_to_symbol_not_found);
+PUSH(R2);
+PUSH(IND(R1));
+CALL(COMPARE_STRINGS);
+DROP(2);
+CMP(R0,TRUE);
+JUMP_EQ(L_string_to_symbol_found);
+MOV(R1,INDD(R1,1));
+JUMP(L_string_to_symbol_loop1)
+
+L_string_to_symbol_not_found:
+MOV(IND(R1),R2);
+PUSH(IMM(2));
+CALL(MALLOC);
+DROP(1);
+MOV(IND(R0),T_UNDEFINED)
+MOV(INDD(R1,1),R0);
+MOV(INDD(R3,1),R2);
+JUMP(L_string_to_symbol_finish)
+
+L_string_to_symbol_found:
+MOV(INDD(R3,1),IND(R1));
+
+L_string_to_symbol_finish:
+
+MOV(R0,R3);
+FUNC_END;
+
+L_symbol_to_string:
+FUNC_START;
+CHECK_ARGS(1);
+CHECK_TYPE(T_SYMBOL,PARAM(0));
+MOV(R0,PARAM(0));
+MOV(R0,INDD(R0,1));
+
+FUNC_END;
 ERROR_TYPE_MIS_MATCH:
 printf("vooom ooom \n");
 ERROR_NUMBER_OF_ARGS:
