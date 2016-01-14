@@ -1251,7 +1251,9 @@ module Global_Env = struct
     "make_string";"is_eq";
     "v_lt";"v_gt";"v_eq";
     "string_to_symbol";
-    "symbol_to_string";"make_vector"];;
+    "symbol_to_string";"make_vector";
+    "is_bool";"is_string";"is_symbol";"is_vector";
+    "is_proc";"vec_len";"string_len";"vector_ref"];;
   let create_global_env lst =
     let rec helper curr_add acc = function
       |[] ->acc

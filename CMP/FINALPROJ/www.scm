@@ -1,2 +1,2 @@
-(make-vector 10 "alaa")
+(vector_ref (make-vector 10 "alaa") 0)
 
