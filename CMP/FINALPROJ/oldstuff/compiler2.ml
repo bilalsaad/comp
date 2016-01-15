@@ -1243,7 +1243,7 @@ module Global_Env = struct
   let global = ref [];;
   let get_env () = !global;;
   let prims = (*cons car cdr +*)
-    ["cdr";"car";"cons";"plus";
+    ["car";"cdr";"cons";"plus";
     "minus";"is_zero";"is_null";
     "mul";"is_list";"is_pair";
     "v_plus";"v_minus";"v_mult";
@@ -1253,9 +1253,7 @@ module Global_Env = struct
     "string_to_symbol";
     "symbol_to_string";"make_vector";
     "is_bool";"is_string";"is_symbol";"is_vector";
-    "is_proc";"vec_len";"string_len";
-    "vector_ref";"string_ref";"char_to_integer";
-    "integer_to_char"];;
+    "is_proc";"vector_len";"string_len";"vector_ref"];;
   let create_global_env lst =
     let rec helper curr_add acc = function
       |[] ->acc
@@ -1264,7 +1262,7 @@ module Global_Env = struct
       |_::rest->helper curr_add acc rest in
     let off_set=1+Constants.const_tble+List.length (Constants.addr_table()) in
     let prims = List.mapi (fun a b -> (b, off_set+a)) prims in
-    let off_set =off_set+List.length prims in
+    let off_set = off_set +List.length prims in
     let env = prims @ List.rev(helper off_set !global lst) in
 
     global :=env;
@@ -1285,19 +1283,13 @@ module Global_Env = struct
           "INCR(R0); \n" in 
 
         a  ^  s)
-           "/* STARTING TO ADD PRIMITIVES */ \n INCR(R0); \n" prims 
+           "/* STARTING TO ADD PRIMITIVES */ \n" prims 
         in
         closure_creation;;
 
     (*resets the global env, should be done after each compilation of a file*)      
   let reset_env () = 
     global:= [] 
-  ;;
-  let mem v =
-    List.mem_assoc v (get_env())
-  ;;
-  let assoc v =
-    string_of_int (List.assoc v (get_env()))
   ;;
 
 
@@ -1327,38 +1319,23 @@ let gen_label s =
 let start_of_function,end_function  = 
   "PUSH(FP);\nMOV(FP,SP);\n","POP(FP);\nRETURN;\n";;
 let start_of_lambda label labelexit env_sz = 
-  let lambda_loop1, lambda_loop2, lambda_loop1_exit, lambda_loop2_exit = 
-        gen_label "lambda_loop1",gen_label "lambda_loop2",
-        gen_label "lambda_loop1_exit", gen_label "lambda_loop2_exit" in
    "// IN LAMBDA AAAAA \n"^
    "MOV(R1,1+"^env_sz^"); \n"^
    "PUSH(R1); \n" ^
    "CALL(MALLOC);\n"^
    "MOV(R1,R0); \nDROP(1); \n" ^
    "MOV(R2, FPARG(0)); \n" ^
-   "MOV(R4,0); \n" ^ 
-   "MOV(R5,1); \n" ^
-   lambda_loop1^": \n" ^
-   "CMP(R4,"^env_sz^"); \n" ^
-   "JUMP_GE("^lambda_loop1_exit^"); \n" ^
-   "MOV(R3, INDD(R2,R4)); \n" ^
-   "MOV(INDD(R1,R5), R3); \n" ^
-   "INCR(R4); \n" ^
-   "INCR(R5); \n" ^
-   "JUMP("^lambda_loop1^");\n" ^
-   lambda_loop1_exit^": \n" ^
+   "for(int i=0,j=1; i < " ^ env_sz ^"; ++i, ++j){
+     MOV(R3, INDD(R2,i));
+     MOV(INDD(R1,j),R3);
+   }\n"^
    "PUSH(FPARG(1)); \n" ^
    "CALL(MALLOC); \n" ^
    "DROP(1); \n" ^
-   "MOV(R4,0); \n" ^
-   lambda_loop2^": \n" ^
-   "CMP(R4,FPARG(1)); \n" ^
-   "JUMP_GE("^lambda_loop2_exit^"); \n" ^
-   "MOV(R3,FPARG(2+R4)); \n" ^
-   "MOV(INDD(R0,R4),R3); \n" ^
-   "INCR(R4); \n" ^
-   "JUMP("^lambda_loop2^"); \n" ^
-   lambda_loop2_exit^": \n" ^
+   "for(int i=0; i<FPARG(1); ++i){
+     MOV(R3,FPARG(2+i));
+     MOV(INDD(R0,i),R3);
+    }\n" ^
    "MOV(INDD(R1,0),R0); \n" ^
    "PUSH(IMM(3)); \n" ^
    "CALL(MALLOC); \n" ^
@@ -1531,8 +1508,9 @@ let code_gen e =
   let delta = 2 in
   let var_gen = function
     |VarFree' v -> 
-        if Global_Env.mem v then
-          let add = Global_Env.assoc v in 
+        let global = Global_Env.get_env() in
+        if List.mem_assoc v global then
+          let add = string_of_int(List.assoc v global) in 
           "MOV(R0,IND("^add^")); \n"^
           "CMP(R0,T_UNDEFINED); \n"^
           "JUMP_EQ(UNDEFINED_VARIABLE_ERROR);\n" 
@@ -1547,25 +1525,6 @@ let code_gen e =
         "MOV(R0,FPARG(0));\n"^
         "MOV(R0,INDD(R0,"^major^"));\n"^
         "MOV(R0,INDD(R0,"^minor^"));\n" in
-  let set_gen = function
-    |VarFree' v ->
-      if Global_Env.mem v then
-        let add = Global_Env.assoc v in 
-        "MOV(IND("^add^"),R0); \n"
-      else "SHOW(\"Exception: variable " ^ v ^ "is not bound \\n \"); \n
-      exit(12);"
-    |VarParam'(name,minor)->
-        let minor=minor+delta in
-        "MOV(FPARG("^(string_of_int minor) ^"),R0); \n" 
-    |VarBound'(name,major,minor)->
-      let major,minor = string_of_int major, string_of_int minor in 
-      "PUSH(R1); \n" ^ 
-      "MOV(R1,FPARG(0));\n"^
-      "MOV(R1,INDD(R1,"^major^"));\n"^
-      "MOV(INDD(R1,"^minor^"),R0);\n"^
-      "POP(R1); \n" in
-
-
   let rec run depth = function
     |Const' e ->
         sexpr_gen e
@@ -1616,13 +1575,10 @@ let code_gen e =
           exprs
     |Def' (Var' (VarFree' a), e) ->
         let val_e = run depth e in
-        let addr = Global_Env.assoc a in
-          asm_comment("IN DEFINE "^a) ^
+        let global = Global_Env.get_env() in
+        let addr = string_of_int (List.assoc a global) in
+          asm_comment"IN DEFINE" ^
           val_e ^ "\n MOV(IND("^addr^"), R0);\n"^ "MOV(R0,VOID); \n" 
-    |Set' (Var' v,e) -> 
-        let prog_e = run depth e in
-        asm_comment "IN SET!!!!\n " ^ 
-        prog_e ^ (set_gen v) ^ "MOV(R0,VOID); \n" 
     | _ ->  "pieieieiei" in 
         
           
@@ -1678,7 +1634,7 @@ let compile_scheme_file scm_source_file asm_target_file =
       prologue 
       asm_strs in
   let asm_str=asm_str ^ epilogue in
-  Constants.reset_const_tbl();Global_Env.reset_env(); 
+  Constants.reset_const_tbl(); Global_Env.reset_env();
   string_to_file asm_str asm_target_file
 
 ;;

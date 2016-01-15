@@ -54,7 +54,6 @@ PUSH(PARAM(1));
 PUSH(PARAM(0));
 CALL(MAKE_SOB_PAIR);
 DROP(2);
-
 FUNC_END
 
 L_car:
@@ -93,23 +92,9 @@ BINARY_ARTH(MUL);
 L_is_eq:
   FUNC_START;
   CHECK_ARGS(2);
-  CMP(PARAM(0),PARAM(1));
-  MOV(R0,TRUE);
-  JUMP_EQ(L_is_eq_finish);
-  MOV(R1,PARAM(0));
-  MOV(R2,PARAM(1));
-  CMP(IND(R1),T_SYMBOL);
-  JUMP_NE(L_is_eq_false);
-  CMP(IND(R2),T_SYMBOL);
-  JUMP_NE(L_is_eq_false);
-  CMP(INDD(R1,1),INDD(R2,1));
-  JUMP_NE(L_is_eq_false);
-  JUMP(L_is_eq_finish); 
-L_is_eq_false:
-  MOV(R0,FALSE);
-L_is_eq_finish:
-  FUNC_END;
-   
+  return_bool(PARAM(0),PARAM(1),L_is_eq_end);
+  L_is_eq_end:
+  FUNC_END; 
 L_is_zero:
 FUNC_START;
 CHECK_ARGS(1);
@@ -169,15 +154,13 @@ return_bool(PARAM(0), T_VECTOR, finish_is_vector);
 finish_is_vector:
 FUNC_END;
 
-L_vec_len:
+L_vector_len:
 FUNC_START;
 CHECK_ARGS(1);
+BP;
 CHECK_TYPE(T_VECTOR,PARAM(0));
 MOV(R0,PARAM(0));
 MOV(R0,INDD(R0,1));
-PUSH(R0);
-CALL(MAKE_SOB_INTEGER);
-DROP(1);
 FUNC_END;
 
 L_string_len:
@@ -186,9 +169,6 @@ CHECK_ARGS(1);
 CHECK_TYPE(T_STRING,PARAM(0));
 MOV(R0,PARAM(0));
 MOV(R0,INDD(R0,1));
-PUSH(R0);
-CALL(MAKE_SOB_INTEGER);
-DROP(1);
 FUNC_END;
 
 L_vector_ref:
@@ -206,21 +186,7 @@ MOV(R0,INDD(R1,2+R3));
 FUNC_END;
 
 
-L_string_ref:
-FUNC_START;
-CHECK_ARGS(2);
-CHECK_TYPE(T_STRING,PARAM(0));
-CHECK_TYPE(T_INTEGER,PARAM(1));
-MOV(R1,PARAM(0));
-MOV(R2,INDD(R1,1));
-MOV(R3,PARAM(1));
-MOV(R3,INDD(R3,1));
-CMP(R3,R2);
-JUMP_GE(ERROR_TYPE_MIS_MATCH);
-MOV(R0,INDD(R1,2+R3));
-PUSH(R0);
-CALL(MAKE_SOB_CHAR);
-DROP(1);
+
 FUNC_END;
 
 L_is_list:
@@ -247,7 +213,6 @@ FUNC_END;
 */
 L_v_plus:
 FUNC_START;
-
 MOV(R0,0);
 MOV(R1,0); 
 L_v_plus_loop:
@@ -262,7 +227,6 @@ L_v_plus_func_end:
 PUSH(R0);
 CALL(MAKE_SOB_INTEGER);
 DROP(1);
-
 FUNC_END;
 /*variadic minus function, goo goo 
 */
@@ -428,6 +392,7 @@ RETURN;
 /*make-string given a char and a number, it will make a string hopefully*/
 L_make_string:
 FUNC_START;
+db;
 CHECK_ARGS(2);
 CHECK_TYPE(T_INTEGER,PARAM(0));
 CHECK_TYPE(T_CHAR,PARAM(1));
@@ -452,6 +417,7 @@ RETURN;
 
 L_make_vector:
 FUNC_START;
+db;
 CHECK_ARGS(2);
 MOV(R3,IMM(0));
 MOV(R4,PARAM(0));
@@ -478,11 +444,7 @@ CHECK_TYPE(T_CLOSURE,PARAM(0));
 //ASSERT_LIST(PARAM(1));
 MOV(R1,0); //counter for number of arguments
 MOV(R2,FPARG(-1)); //should hold the return address
-MOV(R8,FPARG(-2)); //should hold the old fp
-//we want r3 to hold a pointer to the last argument of apply
-MOV(R3,FP);
-SUB(R3,IMM(4));
-SUB(R3,NUMBER);
+MOV(R3,FPARG(-2)); //should hold the old fp
 MOV(R4,PARAM(0)); //should hold the closure
 MOV(R0,PARAM(1));
 L_apply_loop1:
@@ -499,6 +461,7 @@ L_apply_loop1_exit:
 //bm-1.....b0 m. We need to put aside le old fp and and ret
 //now, we need to reverse the order of bm-1....b0 on le stack
 //stackptr-1 should be the address of bm-1 and fp->b0
+BP;
 MOV(R5,SP);
 DECR(R5); // r5 <- bm-1
 MOV(R6,FP); //r6 <- b0
@@ -539,10 +502,9 @@ L_apply_writeover_frame: //christ, that's long
   INCR(R5);
   JUMP(L_apply_writeover_frame)
 L_apply_write_fin:
+// 2+2=4 mod 12
 //Now we must update the SP, else we'll have BUGS
 MOV(SP,R3);
-MOV(FP,R8);
-
 JUMPA(INDD(R4,2)); //fml
 
 FUNC_END;
@@ -621,6 +583,7 @@ L_string_to_symbol_found:
 MOV(INDD(R3,1),IND(R1));
 
 L_string_to_symbol_finish:
+
 MOV(R0,R3);
 FUNC_END;
 
@@ -632,30 +595,6 @@ MOV(R0,PARAM(0));
 MOV(R0,INDD(R0,1));
 
 FUNC_END;
-
-L_char_to_integer:
-FUNC_START;
-CHECK_ARGS(1);
-CHECK_TYPE(T_CHAR, PARAM(0));
-MOV(R0, PARAM(0));
-MOV(R0, INDD(R0,1));
-PUSH(R0);
-CALL(MAKE_SOB_INTEGER);
-DROP(1);
-FUNC_END;
-
-
-L_integer_to_char:
-FUNC_START;
-CHECK_ARGS(1);
-CHECK_TYPE(T_INTEGER, PARAM(0));
-MOV(R0, PARAM(0));
-MOV(R0, INDD(R0,1));
-PUSH(R0);
-CALL(MAKE_SOB_CHAR);
-DROP(1);
-FUNC_END;
-
 
 ERROR_TYPE_MIS_MATCH:
 printf("vooom ooom \n");

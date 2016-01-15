@@ -8,13 +8,23 @@
 ;vector exists as its own name
 (define make-string make_string) ;this probably doesn't work
 (define make-vector make_vector)
+(define vector-ref vector_ref)
+(define string-ref string_ref)
+(define string-length string_len)
+(define vector-length vec_len)
 ;apply exists on its own
 ;cons car and cdr exists on their own 
 (define eq? is_eq)
 (define zero? is_zero)
 (define null? is_null)
-(define pairs? is_pair)
+(define pair? is_pair)
 (define list? is_list)
+
+(define char->integer char_to_integer)
+(define integer->char integer_to_char)
+(define symbol->string symbol_to_string)
+(define string->symbol string_to_symbol)
+
 
 
 ;scheme implementations
@@ -46,3 +56,18 @@
       (foldr helper '() lst))))
 
 (define not (lambda(e) (if e #f #t))) 
+
+(define map_simple
+  (lambda(f ls)
+    (let ((ls (reverse ls '())))
+     (foldl (lambda(a b) (cons (f a) b)) '() ls))))
+
+(define map
+  (lambda(f . s)
+    (if (null? (car s))
+        '()
+        (let ((f_on_cars (apply f (map_simple car s)))
+              (rest (map_simple cdr s)))
+          (cons f_on_cars (apply map (cons f rest)))))))
+
+
