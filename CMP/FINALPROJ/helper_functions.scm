@@ -19,6 +19,21 @@
 (define null? is_null)
 (define pair? is_pair)
 (define list? is_list)
+(define symbol? is_symbol)
+(define string? is_string)
+(define vector? is_vector)
+(define rational? is_rational)
+(define procedure? is_proc)
+(define number? is_number)
+(define integer? is_int)
+(define char? is_char)
+(define boolean? is_bool)
+
+(define set-cdr! set_cdr)
+(define set-car! set_car)
+(define vector-set! vector_set)
+(define string-set! string_set)
+
 
 (define char->integer char_to_integer)
 (define integer->char integer_to_char)

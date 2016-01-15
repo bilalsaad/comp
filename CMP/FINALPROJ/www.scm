@@ -30,7 +30,7 @@ q
 
 ((car (cdr foo)))
 
-(div_fracs 7/9 1 2 3 4 5 6 7 8 ) 
+(/ 7/9 1 2 3 4 5 6 7 8 ) 
 ;(div_fracs 1/2  1/2)
 (define p (cons 1 2))
 (set_cdr p "bilal")
@@ -44,3 +44,15 @@ v
 
 (< 1/2 2/3 3/4 4/5 5/6 6/7 23131 6)
 (> -1/2 -1/4)
+
+#;(list append    apply  <    =    >    +    /    *    -    boolean?  car  cdr
+      char->integer  char?  cons  denominator  eq? 
+      integer?  integer->char  list    make-string 
+      make-vector  map  not  null?  number?  numerator  pair?  procedure? 
+      rational?  remainder  set-car!  set-cdr!  string-length  string-ref
+      string-set!  string->symbol  string? 
+      symbol?  symbol->string  vector  vector-length
+      vector-ref  vector-set!  vector?  zero?
+)
+
+(boolean? #t)

@@ -28,6 +28,9 @@
   CALL(MAKE_SOB_INTEGER); \
   DROP(1); \
   FUNC_END; 
+/****************************************/
+
+
 L_cons:
 FUNC_START;
 CHECK_ARGS(2);
@@ -37,6 +40,8 @@ CALL(MAKE_SOB_PAIR);
 DROP(2);
 
 FUNC_END
+/****************************************/
+
 
 L_car:
 FUNC_START
@@ -45,6 +50,8 @@ CHECK_TYPE(T_PAIR, PARAM(0));
 MOV(R0,PARAM(0));
 MOV(R0, INDD(R0,1));
 FUNC_END
+/****************************************/
+
 
 L_cdr:
 FUNC_START
@@ -55,13 +62,16 @@ MOV(R0, INDD(R0,2));
 FUNC_END
 
 
+/****************************************/
+
 
 
 #define return_bool(param,bool,label_name) \
   CMP(param,bool); \
   MOV(R0,TRUE); \
   JUMP_EQ(label_name); \
-  MOV(R0,FALSE); \
+  MOV(R0,FALSE); 
+/****************************************/
 
 L_is_eq:
   FUNC_START;
@@ -82,7 +92,7 @@ L_is_eq_false:
   MOV(R0,FALSE);
 L_is_eq_finish:
   FUNC_END;
-   
+/****************************************/
 L_is_zero:
 FUNC_START;
 CHECK_ARGS(1);
@@ -91,57 +101,82 @@ MOV(R0,PARAM(0));
 return_bool(INDD(R0,1), IMM(0),finish_is_zero);
 finish_is_zero:
 FUNC_END
-
+/****************************************/
 L_is_null:
 FUNC_START;
 CHECK_ARGS(1);
 return_bool(PARAM(0),NIL,finish_is_nil);
 finish_is_nil:
 FUNC_END; 
+/****************************************/
+L_is_char:
+FUNC_START;
+CHECK_ARGS(1);
+MOV(R0,PARAM(0));
+return_bool(IND(R0),T_CHAR,finish_is_char);
+finish_is_char:
+FUNC_END; 
+/****************************************/
 
 
+/****************************************/
 L_is_pair:
 FUNC_START;
 CHECK_ARGS(1);
-return_bool(PARAM(0),T_PAIR,finish_is_pair);
+MOV(R0,PARAM(0));
+return_bool(IND(R0),T_PAIR,finish_is_pair);
 finish_is_pair:
 FUNC_END;
-
+/****************************************/
 L_is_bool:
 FUNC_START;
 CHECK_ARGS(1);
-return_bool(PARAM(0),T_BOOL,finish_is_bool);
+MOV(R0,PARAM(0));
+return_bool(IND(R0),T_BOOL,finish_is_bool);
 finish_is_bool:
 FUNC_END;
-
+/****************************************/
 L_is_proc:
 FUNC_START;
 CHECK_ARGS(1);
-return_bool(PARAM(0),T_CLOSURE,finish_is_proc);
+MOV(R0,PARAM(0));
+return_bool(IND(R0),T_CLOSURE,finish_is_proc);
 finish_is_proc:
 FUNC_END;
-
+/****************************************/
 L_is_string:
 FUNC_START;
 CHECK_ARGS(1);
-return_bool(PARAM(0),T_STRING,finish_is_string);
+MOV(R0,PARAM(0));
+return_bool(IND(R0),T_STRING,finish_is_string);
 finish_is_string:
 FUNC_END;
-
+/****************************************/
 L_is_symbol:
 FUNC_START;
 CHECK_ARGS(1);
-return_bool(PARAM(0), T_SYMBOL, finish_is_symbol);
+MOV(R0,PARAM(0));
+return_bool(IND(R0), T_SYMBOL, finish_is_symbol);
 finish_is_symbol:
 FUNC_END;
+/****************************************/
+L_is_int:
+FUNC_START;
+CHECK_ARGS(1);
+MOV(R0,PARAM(0));
+return_bool(IND(R0), T_INTEGER, finish_is_int);
+finish_is_int:
 
+FUNC_END;
+/****************************************/
 L_is_vector:
 FUNC_START;
 CHECK_ARGS(1);
-return_bool(PARAM(0), T_VECTOR, finish_is_vector);
+MOV(R0,PARAM(0));
+return_bool(IND(R0), T_VECTOR, finish_is_vector);
 finish_is_vector:
 FUNC_END;
-
+/****************************************/
 L_is_number:
 FUNC_START;
 CHECK_ARGS(1);
@@ -154,15 +189,24 @@ JUMP_EQ(finish_is_number);
 MOV(R0,FALSE);
 finish_is_number:
 FUNC_END;
-
+/****************************************/
 L_numerator:
 FUNC_START;
 CHECK_ARGS(1);
 MOV(R0,PARAM(0))
 MOV(R0,INDD(R0,1));
 FUNC_END;
+/****************************************/
 
-L_is_fraction:
+L_denominator:
+FUNC_START;
+CHECK_ARGS(1);
+MOV(R0,PARAM(0))
+MOV(R0,INDD(R0,2));
+FUNC_END;
+
+/****************************************/
+L_is_rational:
 FUNC_START;
 CHECK_ARGS(1);
 MOV(R0,TRUE);
@@ -174,7 +218,7 @@ JUMP_EQ(finish_is_rational);
 MOV(R0,FALSE);
 finish_is_rational:
 FUNC_END;
-
+/****************************************/
 L_remainder:
 FUNC_START;
 CHECK_ARGS(2);
@@ -189,7 +233,7 @@ PUSH(R0);
 CALL(MAKE_SOB_INTEGER);
 DROP(1);
 FUNC_END;
-
+/****************************************/
 
 
 L_vec_len:
@@ -202,7 +246,7 @@ PUSH(R0);
 CALL(MAKE_SOB_INTEGER);
 DROP(1);
 FUNC_END;
-
+/****************************************/
 L_string_len:
 FUNC_START;
 CHECK_ARGS(1);
@@ -213,7 +257,7 @@ PUSH(R0);
 CALL(MAKE_SOB_INTEGER);
 DROP(1);
 FUNC_END;
-
+/****************************************/
 L_vector_ref:
 FUNC_START;
 CHECK_ARGS(2);
@@ -227,7 +271,7 @@ CMP(R3,R2);
 JUMP_GE(ERROR_TYPE_MIS_MATCH);
 MOV(R0,INDD(R1,2+R3));
 FUNC_END;
-
+/****************************************/
 
 L_string_ref:
 FUNC_START;
@@ -245,7 +289,7 @@ PUSH(R0);
 CALL(MAKE_SOB_CHAR);
 DROP(1);
 FUNC_END;
-
+/****************************************/
 L_is_list:
 FUNC_START;
 CHECK_ARGS(1);
@@ -264,7 +308,7 @@ L_is_list_return_false:
 MOV(R0,FALSE);
 L_is_list_end:
 FUNC_END;
-
+/****************************************/
 /*
 *  variadic plus function, foo foo
 */
@@ -273,7 +317,7 @@ FUNC_END;
 
 
 
-
+/****************************************/
 
 L_v_plus:
 FUNC_START;
@@ -308,9 +352,9 @@ CALL(MAKE_SOB_FRACTION);
 DROP(2);
 
 FUNC_END;
+/****************************************/
 
-
-L_v_mul:
+L_v_mult:
 FUNC_START;
 MOV(R1,1);
 MOV(R2,1);
@@ -341,7 +385,7 @@ DROP(2);
 
 FUNC_END;
 
-
+/****************************************/
 L_v_div:
 FUNC_START;
 MOV(R5,PARAM(0));
@@ -392,8 +436,8 @@ JUMP(L_div_fracs_finish);
 
 
 
-
-L_v_sub:
+/****************************************/
+L_v_minus:
 FUNC_START;
 MOV(R5,PARAM(0));
 MOV(R1,INDD(R5,1));
@@ -545,7 +589,7 @@ MOV(R5,FALSE);
 L_v_gt_finish:
 MOV(R0,R5);
 FUNC_END;
-
+/****************************************/
 L_v_eq:
 FUNC_START;
 MOV(R1,NUMBER);
@@ -569,29 +613,8 @@ MOV(R5,FALSE);
 L_v_eq_finish:
 MOV(R0,R5);
 FUNC_END;
+/****************************************/
 
-/*var%adic div function pew pew */
-L_v_div:
-FUNC_START;
-CMP(NUMBER,0);
-JUMP_EQ(ERROR_TYPE_MIS_MATCH)
-
-MOV(R0,PARAM(0));
-MOV(R0,INDD(R0,1))
-MOV(R1,1); 
-L_v_div_loop:
-CMP(R1,NUMBER);
-JUMP_EQ(L_v_div_func_end);
-MOV(R2,PARAM(R1))
-CHECK_TYPE(T_INTEGER,R2)
-DIV(R0,INDD(R2,1))
-INCR(R1)
-JUMP(L_v_div_loop)
-L_v_div_func_end:
-PUSH(R0);
-CALL(MAKE_SOB_INTEGER);
-DROP(1);
-FUNC_END;
 
 
 /*vector: makes a vector, duh, using MAKE_SOB_VECTOR */
@@ -611,7 +634,7 @@ CALL(MAKE_SOB_VECTOR);
 DROP(NUMBER+1)
 POP(FP);
 RETURN;
-
+/****************************************/
 /*make-string given a char and a number, it will make a string hopefully*/
 L_make_string:
 FUNC_START;
@@ -636,7 +659,7 @@ DROP(R4+1)
 POP(FP);
 RETURN;
 
-
+/****************************************/
 L_make_vector:
 FUNC_START;
 CHECK_ARGS(2);
@@ -656,7 +679,7 @@ CALL(MAKE_SOB_VECTOR);
 DROP(R4+1)
 POP(FP);
 RETURN;
-
+/****************************************/
 L_apply:
 FUNC_START;
 CHECK_ARGS(2);
@@ -733,7 +756,7 @@ MOV(FP,R8);
 JUMPA(INDD(R4,2)); //fml
 
 FUNC_END;
-
+/****************************************/
 //compares two strings, deeply
 COMPARE_STRINGS:
 FUNC_START;
@@ -768,7 +791,7 @@ POP(R2);
 POP(R1)
 FUNC_END;
 
-
+/****************************************/
 L_string_to_symbol:
 FUNC_START;
 
@@ -810,7 +833,7 @@ MOV(INDD(R3,1),IND(R1));
 L_string_to_symbol_finish:
 MOV(R0,R3);
 FUNC_END;
-
+/****************************************/
 L_symbol_to_string:
 FUNC_START;
 CHECK_ARGS(1);
@@ -819,7 +842,7 @@ MOV(R0,PARAM(0));
 MOV(R0,INDD(R0,1));
 
 FUNC_END;
-
+/****************************************/
 L_char_to_integer:
 FUNC_START;
 CHECK_ARGS(1);
@@ -830,7 +853,7 @@ PUSH(R0);
 CALL(MAKE_SOB_INTEGER);
 DROP(1);
 FUNC_END;
-
+/****************************************/
 
 L_integer_to_char:
 FUNC_START;
@@ -842,7 +865,7 @@ PUSH(R0);
 CALL(MAKE_SOB_CHAR);
 DROP(1);
 FUNC_END;
-
+/****************************************/
 L_set_car:
 FUNC_START;
 CHECK_ARGS(2);
@@ -850,7 +873,7 @@ MOV(R0,PARAM(0)); //the pair
 MOV(INDD(R0,1),PARAM(1));
 MOV(R0,VOID);
 FUNC_END;
-
+/****************************************/
 L_set_cdr: 
 FUNC_START;
 CHECK_ARGS(2);
@@ -858,7 +881,7 @@ MOV(R0,PARAM(0)); //the pair
 MOV(INDD(R0,2),PARAM(1));
 MOV(R0,VOID);
 FUNC_END;
-
+/****************************************/
 L_string_set:
 FUNC_START;
 CHECK_ARGS(3);
@@ -870,7 +893,7 @@ MOV(R2,PARAM(2));
 MOV(INDD(R0,R1),INDD(R2,1));
 MOV(R0,VOID);
 FUNC_END;
-
+/****************************************/
 L_vector_set:
 FUNC_START;
 CHECK_ARGS(3);
@@ -881,7 +904,7 @@ ADD(R1,2);
 MOV(INDD(R0,R1),PARAM(2));
 MOV(R0,VOID);
 FUNC_END;
-
+/****************************************/
 
 ERROR_TYPE_MIS_MATCH:
 printf("vooom ooom \n");

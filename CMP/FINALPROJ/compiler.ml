@@ -1245,20 +1245,20 @@ module Global_Env = struct
   let global = ref [];;
   let get_env () = !global;;
   let prims = (*cons car cdr +*)
-    ["cdr";"car";"cons";"plus";
-    "minus";"is_zero";"is_null";
-    "mul";"is_list";"is_pair";
+    ["cdr";"car";"cons";
+    "is_zero";"is_null";
+    "is_list";"is_pair";
     "v_plus";"v_minus";"v_mult";
     "v_div";"vector";"apply";
-    "make_string";"is_eq";
+    "make_string";"is_eq";"is_int";
     "v_lt";"v_gt";"v_eq";
     "string_to_symbol";
     "symbol_to_string";"make_vector";
     "is_bool";"is_string";"is_symbol";"is_vector";
-    "is_proc";"vec_len";"string_len";
+    "is_proc";"vec_len";"string_len";"denominator";
     "vector_ref";"string_ref";"char_to_integer";
-    "integer_to_char";"plus_fracs";"sub_fracs"
-    ;"mul_fracs";"div_fracs";"set_car";"set_cdr";"string_set";"vector_set"];;
+    "integer_to_char";"remainder";"is_number";"numerator";"is_rational";
+    "set_car";"set_cdr";"string_set";"vector_set";"is_char"];;
   let create_global_env lst =
     let rec helper curr_add acc = function
       |[] ->acc
@@ -1733,6 +1733,6 @@ let rd_expz str =
   List.map Semantics.run_semantics sz;;
 
 let foo ()=  
-  Code_Gen.compile_scheme_file "foo.scm" "goo.c";
-  Sys.command "gcc -o out goo.c";
+  Code_Gen.compile_scheme_file "www.scm" "www.c";
+  Sys.command "gcc -o out www.c";
   Sys.command "./out";;
