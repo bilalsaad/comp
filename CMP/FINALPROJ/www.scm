@@ -40,3 +40,7 @@ b
 (define v (vector 1 2 3 4 5 6 7 8))
 (vector_set v 5 "abcdefghijklmnopqrstuvwxyz")
 v
+(or (not 1) (not 3) (not (not (not (not (not (not (not (not 3)))))))))  
+
+(< 1/2 2/3 3/4 4/5 5/6 6/7 23131 6)
+(> -1/2 -1/4)

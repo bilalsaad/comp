@@ -56,14 +56,6 @@ FUNC_END
 
 
 
-L_plus: 
-BINARY_ARTH(ADD);
-
-L_minus: 
-BINARY_ARTH(SUB);
-
-L_mul:
-BINARY_ARTH(MUL);
 
 #define return_bool(param,bool,label_name) \
   CMP(param,bool); \
@@ -150,6 +142,56 @@ return_bool(PARAM(0), T_VECTOR, finish_is_vector);
 finish_is_vector:
 FUNC_END;
 
+L_is_number:
+FUNC_START;
+CHECK_ARGS(1);
+MOV(R0,TRUE);
+MOV(R1,PARAM(0));
+CMP(IND(R1),T_INTEGER);
+JUMP_EQ(finish_is_number);
+CMP(IND(R1),T_FRACTION);
+JUMP_EQ(finish_is_number);
+MOV(R0,FALSE);
+finish_is_number:
+FUNC_END;
+
+L_numerator:
+FUNC_START;
+CHECK_ARGS(1);
+MOV(R0,PARAM(0))
+MOV(R0,INDD(R0,1));
+FUNC_END;
+
+L_is_fraction:
+FUNC_START;
+CHECK_ARGS(1);
+MOV(R0,TRUE);
+MOV(R1,PARAM(0));
+CMP(IND(R1),T_INTEGER);
+JUMP_EQ(finish_is_number);
+CMP(IND(R1),T_FRACTION);
+JUMP_EQ(finish_is_rational);
+MOV(R0,FALSE);
+finish_is_rational:
+FUNC_END;
+
+L_remainder:
+FUNC_START;
+CHECK_ARGS(2);
+CHECK_TYPE(T_INTEGER,PARAM(0));
+CHECK_TYPE(T_INTEGER,PARAM(1));
+MOV(R0,PARAM(0));
+MOV(R1,PARAM(1));
+MOV(R0,INDD(R0,1));
+MOV(R1,INDD(R1,1));
+REM(R0,R1);
+PUSH(R0);
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
+FUNC_END;
+
+
+
 L_vec_len:
 FUNC_START;
 CHECK_ARGS(1);
@@ -226,32 +268,14 @@ FUNC_END;
 /*
 *  variadic plus function, foo foo
 */
+
+
+
+
+
+
+
 L_v_plus:
-FUNC_START;
-
-MOV(R0,0);
-MOV(R1,0); 
-L_v_plus_loop:
-CMP(R1,NUMBER);
-JUMP_EQ(L_v_plus_func_end);
-MOV(R2,PARAM(R1))
-CHECK_TYPE(T_INTEGER,R2)
-ADD(R0,INDD(R2,1))
-INCR(R1)
-JUMP(L_v_plus_loop)
-L_v_plus_func_end:
-PUSH(R0);
-CALL(MAKE_SOB_INTEGER);
-DROP(1);
-FUNC_END;
-
-
-
-
-
-
-
-L_plus_fracs:
 FUNC_START;
 MOV(R1,0);
 MOV(R2,1);
@@ -286,7 +310,7 @@ DROP(2);
 FUNC_END;
 
 
-L_mul_fracs:
+L_v_mul:
 FUNC_START;
 MOV(R1,1);
 MOV(R2,1);
@@ -318,7 +342,7 @@ DROP(2);
 FUNC_END;
 
 
-L_div_fracs:
+L_v_div:
 FUNC_START;
 MOV(R5,PARAM(0));
 MOV(R1,INDD(R5,1));
@@ -339,6 +363,7 @@ MUL(R1,R4);
 MUL(R2,R3);
 INCR(R5);
 JUMP(L_div_f_loop);
+
 L_div_fracs_int_case:
 MOV(R3,INDD(R6,1));
 MOV(R4,IMM(1));
@@ -352,11 +377,23 @@ DROP(2);
 
 FUNC_END;
 
+
 L_div_fracs_edge:
+CMP(IND(R5),T_FRACTION);
+JUMP_NE(L_div_fracs_edge_integer);
 MOV(R1,INDD(R5,2));
 MOV(R2,INDD(R5,1));
 JUMP(L_div_fracs_finish);
-L_sub_fracs:
+L_div_fracs_edge_integer:
+MOV(R1,IMM(1));
+MOV(R2,INDD(R5,1));
+JUMP(L_div_fracs_finish);
+
+
+
+
+
+L_v_sub:
 FUNC_START;
 MOV(R5,PARAM(0));
 MOV(R1,INDD(R5,1));
@@ -393,128 +430,147 @@ DROP(2);
 FUNC_END;
 
 L_sub_edge:
- MUL(R1,-1);
- JUMP(L_sub_fracs_finish);
+CMP(IND(R5),T_FRACTION);
+JUMP_NE(L_sub_edge_integer);
+MUL(R1,-1);
+JUMP(L_sub_fracs_finish);
+L_sub_edge_integer:
+MUL(R1,-1);
+MOV(R2,IMM(1));
+JUMP(L_sub_fracs_finish);
 /*variadic minus function, goo goo 
 */
-L_v_minus:
-FUNC_START;
-CMP(NUMBER,0);
-JUMP_EQ(ERROR_TYPE_MIS_MATCH)
 
-MOV(R0,PARAM(0));
-MOV(R0,INDD(R0,1))
-MOV(R1,1); 
-L_v_minus_loop:
-CMP(R1,NUMBER);
-JUMP_EQ(L_v_minus_func_end);
-MOV(R2,PARAM(R1))
-CHECK_TYPE(T_INTEGER,R2)
-SUB(R0,INDD(R2,1))
-INCR(R1)
-JUMP(L_v_minus_loop)
-L_v_minus_func_end:
-PUSH(R0);
-CALL(MAKE_SOB_INTEGER);
-DROP(1);
-FUNC_END;
 
-/* variadic mult function go go go go */
-L_v_mult:
+/************************************************/
+COMPARE_NUMS:
 FUNC_START;
+PUSH(R1);
+PUSH(R2);
+PUSH(R3);
+PUSH(R4);
+PUSH(R5);
+
+MOV(R1,FPARG(0));
+MOV(R2,FPARG(1));
+MOV(R3,INDD(R1,1));
+MOV(R4,INDD(R2,1));
+CMP(IND(R1),T_INTEGER);
+JUMP_EQ(compare_nums_fint);
+MOV(R1,INDD(R1,2));
+ret_fint:
+CMP(IND(R2),T_INTEGER);
+JUMP_EQ(compare_nums_sint);
+MOV(R2,(INDD(R2,2)));
+ret_sint:
+MUL(R3,R2); //a*d
+MUL(R1,R4);
+CMP(R1,R3);
+JUMP_EQ(compare_nums_eq);
+JUMP_LT(compare_nums_lt);
+//else gt
 MOV(R0,1);
-MOV(R1,0); 
-L_v_mult_loop:
-CMP(R1,NUMBER);
-JUMP_EQ(L_v_mult_func_end);
-MOV(R2,PARAM(R1))
-CHECK_TYPE(T_INTEGER,R2)
-MUL(R0,INDD(R2,1))
-INCR(R1)
-JUMP(L_v_mult_loop)
-L_v_mult_func_end:
-PUSH(R0);
-CALL(MAKE_SOB_INTEGER);
-DROP(1);
-FUNC_END;
+JUMP(compare_nums_finish);
 
-L_v_less_than_old:
-FUNC_START;
-MOV(R1,PARAM(0));
-MOV(R0,TRUE);
-L_v_less_than_loop:
-  MOV(R2,INDD(R1,1)); //holds previous value
-  MOV(R1,INDD(R1,2));  
-  CMP(R1,NIL);
-  JUMP_EQ(L_v_less_than_finish);
-  MOV(R3,INDD(R1,1));
-  CMP(INDD(R2,1), INDD(R3,1));
-  JUMP_GT(L_v_less_than_false)
-  JUMP(L_v_less_than_loop);
-L_v_less_than_false:
-  MOV(R0,FALSE);
-L_v_less_than_finish:
-FUNC_END;
+compare_nums_eq:
+MOV(R0,0);
+JUMP(compare_nums_finish);
 
+compare_nums_lt:
+MOV(R0,-1);
+JUMP(compare_nums_finish);
+
+compare_nums_fint:
+MOV(R1,1);
+JUMP(ret_fint);
+
+compare_nums_sint:
+MOV(R2,1);
+JUMP(ret_sint);
+
+compare_nums_finish:
+POP(R5);
+POP(R4);
+POP(R3);
+POP(R2);
+POP(R1);
+FUNC_END;
+/*************************************************/
 L_v_lt:
 FUNC_START;
 MOV(R1,NUMBER);
 MOV(R2,1);
-MOV(R0,TRUE);
+MOV(R5,TRUE);
 L_v_lt_loop:
   CMP(R1,R2);
   JUMP_EQ(L_v_lt_finish);
   MOV(R3,PARAM(R2-1));
   MOV(R4,PARAM(R2));
-  CMP(INDD(R3,1),INDD(R4,1));
-  JUMP_GE(L_v_lt_false);
+  PUSH(R3);
+  PUSH(R4);
+  CALL(COMPARE_NUMS);
+  DROP(2);
+  CMP(R0,-1);
+  JUMP_NE(L_v_lt_false);
   INCR(R2);
   JUMP(L_v_lt_loop);
 L_v_lt_false:
-MOV(R0,FALSE);
+MOV(R5,FALSE);
 L_v_lt_finish:
+MOV(R0,R5);
 FUNC_END;
-
+/****************************************************/
+/****************************************************/
 
 L_v_gt:
 FUNC_START;
 MOV(R1,NUMBER);
 MOV(R2,1);
-MOV(R0,TRUE);
+MOV(R5,TRUE);
 L_v_gt_loop:
   CMP(R1,R2);
   JUMP_EQ(L_v_gt_finish);
   MOV(R3,PARAM(R2-1));
   MOV(R4,PARAM(R2));
-  CMP(INDD(R3,1),INDD(R4,1));
-  JUMP_LE(L_v_gt_false);
+  PUSH(R3);
+  PUSH(R4);
+  CALL(COMPARE_NUMS);
+  DROP(2);
+  CMP(R0,1);
+  JUMP_NE(L_v_gt_false);
   INCR(R2);
   JUMP(L_v_gt_loop);
 L_v_gt_false:
-MOV(R0,FALSE);
+MOV(R5,FALSE);
 L_v_gt_finish:
+MOV(R0,R5);
 FUNC_END;
 
 L_v_eq:
 FUNC_START;
 MOV(R1,NUMBER);
 MOV(R2,1);
-MOV(R0,TRUE);
+MOV(R5,TRUE);
 L_v_eq_loop:
   CMP(R1,R2);
   JUMP_EQ(L_v_eq_finish);
   MOV(R3,PARAM(R2-1));
   MOV(R4,PARAM(R2));
-  CMP(INDD(R3,1),INDD(R4,1));
+  PUSH(R3);
+  PUSH(R4);
+  CALL(COMPARE_NUMS);
+  DROP(2);
+  CMP(R0,0);
   JUMP_NE(L_v_eq_false);
   INCR(R2);
   JUMP(L_v_eq_loop);
 L_v_eq_false:
-MOV(R0,FALSE);
+MOV(R5,FALSE);
 L_v_eq_finish:
+MOV(R0,R5);
 FUNC_END;
 
-/*variadic div function pew pew */
+/*var%adic div function pew pew */
 L_v_div:
 FUNC_START;
 CMP(NUMBER,0);

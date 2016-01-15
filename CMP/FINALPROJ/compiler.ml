@@ -1648,8 +1648,18 @@ let code_gen e =
         "MOV(IND(R0),R1); \n" ^
         "MOV(R0,VOID); \n" 
         
-
-
+    |Or' exprs ->
+       let lbl = gen_label "or_exit" in 
+       List.fold_left 
+        (fun a b->
+          let bprog = run depth b in
+          a ^ bprog ^ 
+          "CMP(R0,IMM(FALSE)); \n" ^
+          "JUMP_NE("^lbl ^");\n " 
+        ) "/* IN OROROROROROROOR */ \n\n" exprs 
+        ^
+        lbl^": \n" 
+      
     | _ ->  "pieieieiei" in 
         
           
