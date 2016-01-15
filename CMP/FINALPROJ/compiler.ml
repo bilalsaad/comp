@@ -5,7 +5,6 @@
  *)
 
 #use "pc.ml";;
-
 exception X_not_yet_implemented;;
 exception X_this_should_not_happen;;
 exception X_error of string;; 
@@ -1138,6 +1137,7 @@ module Constants = struct
   let t_vector =	335728;;
   let t_closure =	276405;;
   let t_rational = 235937;;
+  let t_fraction = 16120163;;
   let const_tble = 2;;
   let string_list = const_tble-1;;
   let init= [(Void,[t_void]);
@@ -1172,7 +1172,9 @@ module Constants = struct
       |Number (Int n) :: rest -> 
           let tuple = (Number(Int n),curr_add,[t_integer;n]) in
           helper (tuple::so_far) (curr_add+2) rest
-      (*|Number x ->raise X_not_yet_implemented*)
+      |(Number (Fraction {numerator=a;denominator=b})) as e::rest ->
+          let tuple = (e,curr_add,[t_fraction;a;b])in
+          helper (tuple::so_far) (curr_add+3) rest
       |Char c :: rest ->
         let tuple = (Char c,curr_add,[t_char; Char.code c]) in
         helper (tuple::so_far) (curr_add+2) rest
@@ -1255,7 +1257,8 @@ module Global_Env = struct
     "is_bool";"is_string";"is_symbol";"is_vector";
     "is_proc";"vec_len";"string_len";
     "vector_ref";"string_ref";"char_to_integer";
-    "integer_to_char"];;
+    "integer_to_char";"plus_fracs";"sub_fracs"
+    ;"mul_fracs";"div_fracs";"set_car";"set_cdr";"string_set";"vector_set"];;
   let create_global_env lst =
     let rec helper curr_add acc = function
       |[] ->acc
@@ -1623,6 +1626,30 @@ let code_gen e =
         let prog_e = run depth e in
         asm_comment "IN SET!!!!\n " ^ 
         prog_e ^ (set_gen v) ^ "MOV(R0,VOID); \n" 
+    |Box'(VarParam'(v,minor)) ->
+        (*we want to put v on the heap, i think*)
+        let minor=string_of_int (minor+delta) in
+        "PUSH(IMM(1)); \n"^
+        "CALL(MALLOC); \n" ^
+        "DROP(1); \n" ^
+        "MOV(IND(R0),FPARG("^minor^")); \n" 
+    |BoxGet' v ->
+       let get_var =  var_gen v in
+       (*now R0 should hold the variable, now we just unbox, me thinks*)
+       get_var ^ 
+       "MOV(R0,IND(R0)); \n" (*dereference*)
+        
+    |BoxSet'(v,e) ->
+        let get_var = var_gen v in
+        let e_prog = run depth e in 
+        e_prog ^
+        "MOV(R1,R0); \n"^
+         get_var ^ (*okie, now now r1 holds the exp, r0 the box, dum dum*)
+        "MOV(IND(R0),R1); \n" ^
+        "MOV(R0,VOID); \n" 
+        
+
+
     | _ ->  "pieieieiei" in 
         
           

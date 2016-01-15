@@ -804,19 +804,6 @@ MOV(R0,VOID);
 FUNC_END;
 
 L_string_set:
-FUNC_START;
-CHECK_ARGS(3);
-MOV(R0,PARAM(0)); // the string
-MOV(R1,PARAM(1));
-MOV(R1,INDD(R1,1));
-ADD(R1,2);
-MOV(R2,PARAM(2));
-MOV(INDD(R0,R1),INDD(R2,1));
-MOV(R0,VOID);
-FUNC_END;
-
-L_vector_set:
-FUNC_START;
 CHECK_ARGS(3);
 MOV(R0,PARAM(0)); // the string
 MOV(R1,PARAM(1));
@@ -825,8 +812,6 @@ ADD(R1,2);
 MOV(INDD(R0,R1),PARAM(2));
 MOV(R0,VOID);
 FUNC_END;
-
-
 ERROR_TYPE_MIS_MATCH:
 printf("vooom ooom \n");
 ERROR_NUMBER_OF_ARGS:

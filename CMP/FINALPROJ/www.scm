@@ -20,7 +20,23 @@ q
 (define qwop
   (lambda(x y z)
     (lambda()
-      (list (lambda() (set! x 1))   y z))))
+      (list (lambda() (set! x 1)) (lambda() x)  y z))))
 
 (define l1 (qwop #\a #\b #\c))
-(l1)
+(define foo (l1))
+
+
+((car foo))
+
+((car (cdr foo)))
+
+(div_fracs 7/9 1 2 3 4 5 6 7 8 ) 
+;(div_fracs 1/2  1/2)
+(define p (cons 1 2))
+(set_cdr p "bilal")
+(define b "nilal")
+(string_set b 0 #\b )
+b
+(define v (vector 1 2 3 4 5 6 7 8))
+(vector_set v 5 "abcdefghijklmnopqrstuvwxyz")
+v
