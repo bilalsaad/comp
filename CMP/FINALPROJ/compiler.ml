@@ -1709,9 +1709,11 @@ let compile_scheme_file scm_source_file asm_target_file =
                 (Constants.addr_table()) in
   let global_tbl= Global_Env.create_global_env exprs in
   let prologue,epilogue=init const_tbl global_tbl in
+(* 
+let print_expr = "PUSH(R0);\nCALL(WRITE_SOB);\nDROP(1); printf(\"\\n\");\n"in*) 
   let asm_strs=List.map code_gen exprs in
   let asm_str=List.fold_left 
-      (fun a b-> a ^ "\n /*new expr */ \n \n" ^ b) 
+      (fun a b-> a ^ "\n /*new expr */ \n \n" ^ b ) 
       prologue 
       asm_strs in
   let asm_str=asm_str ^ epilogue in

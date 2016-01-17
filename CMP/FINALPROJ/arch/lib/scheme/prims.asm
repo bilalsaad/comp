@@ -390,7 +390,11 @@ L_v_div:
 FUNC_START;
 MOV(R5,PARAM(0));
 MOV(R1,INDD(R5,1));
+MOV(R2,IMM(1));
+CMP(IND(R5),T_INTEGER);
+JUMP_EQ(L_v_div_finteger);
 MOV(R2,INDD(R5,2));
+L_v_div_finteger:
 CMP(NUMBER,1);
 JUMP_EQ(L_div_fracs_edge);
 MOV(R5,1);
@@ -441,7 +445,11 @@ L_v_minus:
 FUNC_START;
 MOV(R5,PARAM(0));
 MOV(R1,INDD(R5,1));
+MOV(R2,IMM(1));
+CMP(IND(R5),T_INTEGER);
+JUMP_EQ(L_v_minus_finteger);
 MOV(R2,INDD(R5,2));
+L_v_minus_finteger:
 CMP(NUMBER,1);
 JUMP_EQ(L_sub_edge);
 MOV(R5,1);
