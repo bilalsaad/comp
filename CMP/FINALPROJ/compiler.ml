@@ -1698,7 +1698,7 @@ let init const_table global_tbl=
     let constants = Constants.get_const_prims() in 
     let prims = Global_Env.foo() in
 
-    constants^"\n"^tables^"\n"^prims^"\n //STRING LIST \n"^string_lst ^"\n", epi
+    constants^"\n"^tables^"\n"^prims^"\n //STRING LIST\n"^string_lst ^"\n", epi
 ;;
 let compile_scheme_file scm_source_file asm_target_file =
   let helper_code = file_to_string "helper_functions.scm" in
@@ -1709,11 +1709,10 @@ let compile_scheme_file scm_source_file asm_target_file =
                 (Constants.addr_table()) in
   let global_tbl= Global_Env.create_global_env exprs in
   let prologue,epilogue=init const_tbl global_tbl in
-(* 
-let print_expr = "PUSH(R0);\nCALL(WRITE_SOB);\nDROP(1); printf(\"\\n\");\n"in*) 
+  let print_expr="PUSH(R0);\nCALL(PRINT_EXPR);\nDROP(1); \n"in
   let asm_strs=List.map code_gen exprs in
   let asm_str=List.fold_left 
-      (fun a b-> a ^ "\n /*new expr */ \n \n" ^ b ) 
+      (fun a b-> a ^ "\n /*new expr */ \n \n" ^ b^print_expr  ) 
       prologue 
       asm_strs in
   let asm_str=asm_str ^ epilogue in

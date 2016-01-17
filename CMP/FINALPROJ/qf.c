@@ -523,7 +523,7 @@ INCR(R0);
 MOV(IND(R0), LABEL(L_is_char));
 INCR(R0); 
 
- //STRING LIST 
+ //STRING LIST
 MOV(IND(1),R0); 
 MOV(INDD(R0,0), IMM(7)); 
 MOV(R1,R0); 
@@ -542,6 +542,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(90), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -552,6 +555,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(91), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -562,6 +568,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(92), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -572,6 +581,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(93), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -582,6 +594,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(94), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -592,6 +607,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(95), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -602,6 +620,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(96), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -612,6 +633,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(97), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -622,6 +646,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(98), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -632,6 +659,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(99), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -642,6 +672,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(100), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -652,6 +685,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(101), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -662,6 +698,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(102), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -672,6 +711,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(103), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -682,6 +724,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(104), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -692,6 +737,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(105), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -702,6 +750,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(106), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -712,6 +763,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(107), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -722,6 +776,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(108), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -732,6 +789,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(109), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -742,6 +802,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(110), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -752,6 +815,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(111), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -762,6 +828,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(112), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -772,6 +841,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(113), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -782,6 +854,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(114), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -792,6 +867,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(115), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -802,6 +880,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(116), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -812,6 +893,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(117), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -822,6 +906,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(118), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -832,6 +919,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(119), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -842,6 +932,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(120), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -852,6 +945,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(121), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -862,6 +958,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(122), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -872,6 +971,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(123), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -882,6 +984,9 @@ JUMP_EQ(UNDEFINED_VARIABLE_ERROR);
 
  MOV(IND(124), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -895,53 +1000,53 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1680: 
+lambda_loop120: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit680); 
+JUMP_GE(lambda_loop1_exit20); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1680);
-lambda_loop1_exit680: 
+JUMP(lambda_loop120);
+lambda_loop1_exit20: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2680: 
+lambda_loop220: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit680); 
+JUMP_GE(lambda_loop2_exit20); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2680); 
-lambda_loop2_exit680: 
+JUMP(lambda_loop220); 
+lambda_loop2_exit20: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda680));
-JUMP(exit680); 
-lambda680:
+MOV(INDD(R0,2),LABEL(lambda20));
+JUMP(exit20); 
+lambda20:
 PUSH(FP);
 MOV(FP,SP);
 MOV(R1,FPARG(1)); 
 MOV(R2,NIL); 
-lambda_opt_loop123:
+lambda_opt_loop3:
  CMP(R1,0);
- JUMP_EQ(finish_lambda_opt123); 
+ JUMP_EQ(finish_lambda_opt3); 
  PUSH(R2); 
  PUSH(FPARG(R1+1)); 
  CALL(MAKE_SOB_PAIR);
  DROP(2); 
  SUB(R1,1); 
  MOV(R2,R0); 
- JUMP(lambda_opt_loop123);
-finish_lambda_opt123: 
+ JUMP(lambda_opt_loop3);
+finish_lambda_opt3: 
 CMP(IND(R2),T_NIL); 
-JUMP_EQ(empty_opt_case123); 
+JUMP_EQ(empty_opt_case3); 
 MOV(FPARG(2+0),R2); 
 MOV(R4,FP); 
  SUB(R4,IMM(4)); 
@@ -952,15 +1057,15 @@ SUB(R3,IMM(4));
 SUB(R3,FPARG(1)); 
 MOV(R5,R3); 
 SUB(R5,R4); 
-JUMP_EQ(empty_opt_case123); 
-stack_fix123: 
+JUMP_EQ(empty_opt_case3); 
+stack_fix3: 
  CMP(R3,SP); 
- JUMP_EQ(stack_fix_end123); 
+ JUMP_EQ(stack_fix_end3); 
  MOV(STACK(R4),STACK(R3)); 
  INCR(R4); 
  INCR(R3); 
- JUMP(stack_fix123); 
-empty_opt_case123:
+ JUMP(stack_fix3); 
+empty_opt_case3:
   MOV(R5,IMM(-1)); 
  MOV(R6,SP);
   MOV(R3,SP); 
@@ -968,26 +1073,29 @@ empty_opt_case123:
   MOV(R4,FP); 
   SUB(R4,IMM(4)); 
  SUB(R4,FPARG(1)); // now r4 should hold number of old args 
-empty_opt123:
+empty_opt3:
  CMP(R3,R4); 
- JUMP_LT(end_of_nil_case_opt123); 
+ JUMP_LT(end_of_nil_case_opt3); 
  MOV(STACK(R6),STACK(R3)); 
  DECR(R6); 
  DECR(R3); 
- JUMP(empty_opt123);
-end_of_nil_case_opt123: 
+ JUMP(empty_opt3);
+end_of_nil_case_opt3: 
 MOV(STACK(R6),R2); 
-stack_fix_end123: 
+stack_fix_end3: 
 //need to fix the stack pointer stuff now 
 SUB(SP,R5); 
 MOV(FP,SP); 
 MOV(R0,FPARG(2));
 POP(FP);
 RETURN;
-exit680: //OUT OF LAMBDA 
+exit20: //OUT OF LAMBDA 
 
  MOV(IND(125), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -1001,36 +1109,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1681: 
+lambda_loop121: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit681); 
+JUMP_GE(lambda_loop1_exit21); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1681);
-lambda_loop1_exit681: 
+JUMP(lambda_loop121);
+lambda_loop1_exit21: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2681: 
+lambda_loop221: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit681); 
+JUMP_GE(lambda_loop2_exit21); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2681); 
-lambda_loop2_exit681: 
+JUMP(lambda_loop221); 
+lambda_loop2_exit21: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda681));
-JUMP(exit681); 
-lambda681:
+MOV(INDD(R0,2),LABEL(lambda21));
+JUMP(exit21); 
+lambda21:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -1054,11 +1162,11 @@ DROP(R1);
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else404);
+JUMP_EQ(else8);
 MOV(R0,FPARG(3));
 
-JUMP(if_exit404);
-else404:
+JUMP(if_exit8);
+else8:
 //IN APPLIC 
 //IN APPLIC 
 MOV(R0,FPARG(4));
@@ -1133,23 +1241,26 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+3+3); 
-tail_call_copy627:
+tail_call_copy15:
 CMP(R3,R5); 
-JUMP_EQ(jmpa627); 
+JUMP_EQ(jmpa15); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy627); 
-jmpa627: 
+ JUMP(tail_call_copy15); 
+jmpa15: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
-if_exit404:
+if_exit8:
 POP(FP);
 RETURN;
-exit681: //OUT OF LAMBDA 
+exit21: //OUT OF LAMBDA 
 
  MOV(IND(126), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -1163,36 +1274,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1682: 
+lambda_loop122: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit682); 
+JUMP_GE(lambda_loop1_exit22); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1682);
-lambda_loop1_exit682: 
+JUMP(lambda_loop122);
+lambda_loop1_exit22: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2682: 
+lambda_loop222: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit682); 
+JUMP_GE(lambda_loop2_exit22); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2682); 
-lambda_loop2_exit682: 
+JUMP(lambda_loop222); 
+lambda_loop2_exit22: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda682));
-JUMP(exit682); 
-lambda682:
+MOV(INDD(R0,2),LABEL(lambda22));
+JUMP(exit22); 
+lambda22:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -1216,11 +1327,11 @@ DROP(R1);
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else405);
+JUMP_EQ(else9);
 MOV(R0,FPARG(3));
 
-JUMP(if_exit405);
-else405:
+JUMP(if_exit9);
+else9:
 //IN APPLIC 
 //IN APPLIC 
 MOV(R0,FPARG(4));
@@ -1295,23 +1406,26 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+3+3); 
-tail_call_copy628:
+tail_call_copy16:
 CMP(R3,R5); 
-JUMP_EQ(jmpa628); 
+JUMP_EQ(jmpa16); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy628); 
-jmpa628: 
+ JUMP(tail_call_copy16); 
+jmpa16: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
-if_exit405:
+if_exit9:
 POP(FP);
 RETURN;
-exit682: //OUT OF LAMBDA 
+exit22: //OUT OF LAMBDA 
 
  MOV(IND(127), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -1325,36 +1439,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1683: 
+lambda_loop123: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit683); 
+JUMP_GE(lambda_loop1_exit23); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1683);
-lambda_loop1_exit683: 
+JUMP(lambda_loop123);
+lambda_loop1_exit23: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2683: 
+lambda_loop223: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit683); 
+JUMP_GE(lambda_loop2_exit23); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2683); 
-lambda_loop2_exit683: 
+JUMP(lambda_loop223); 
+lambda_loop2_exit23: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda683));
-JUMP(exit683); 
-lambda683:
+MOV(INDD(R0,2),LABEL(lambda23));
+JUMP(exit23); 
+lambda23:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -1378,11 +1492,11 @@ DROP(R1);
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else407);
+JUMP_EQ(else11);
 MOV(R0,FPARG(3));
 
-JUMP(if_exit407);
-else407:
+JUMP(if_exit11);
+else11:
 //IN APPLIC 
 //IN APPLIC 
 MOV(R0,FPARG(2));
@@ -1421,11 +1535,11 @@ DROP(R1);
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else406);
+JUMP_EQ(else10);
 MOV(R0,FPARG(2));
 
-JUMP(if_exit406);
-else406:
+JUMP(if_exit10);
+else10:
 //IN APPLIC 
 //IN APPLIC 
 MOV(R0,FPARG(3));
@@ -1500,24 +1614,27 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+2+3); 
-tail_call_copy629:
+tail_call_copy17:
 CMP(R3,R5); 
-JUMP_EQ(jmpa629); 
+JUMP_EQ(jmpa17); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy629); 
-jmpa629: 
+ JUMP(tail_call_copy17); 
+jmpa17: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
-if_exit406:
-if_exit407:
+if_exit10:
+if_exit11:
 POP(FP);
 RETURN;
-exit683: //OUT OF LAMBDA 
+exit23: //OUT OF LAMBDA 
 
  MOV(IND(128), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -1531,36 +1648,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1684: 
+lambda_loop124: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit684); 
+JUMP_GE(lambda_loop1_exit24); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1684);
-lambda_loop1_exit684: 
+JUMP(lambda_loop124);
+lambda_loop1_exit24: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2684: 
+lambda_loop224: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit684); 
+JUMP_GE(lambda_loop2_exit24); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2684); 
-lambda_loop2_exit684: 
+JUMP(lambda_loop224); 
+lambda_loop2_exit24: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda684));
-JUMP(exit684); 
-lambda684:
+MOV(INDD(R0,2),LABEL(lambda24));
+JUMP(exit24); 
+lambda24:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -1584,11 +1701,11 @@ DROP(R1);
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else409);
+JUMP_EQ(else13);
 MOV(R0,FPARG(3));
 
-JUMP(if_exit409);
-else409:
+JUMP(if_exit13);
+else13:
 //IN APPLIC 
 //IN APPLIC 
 MOV(R0,FPARG(2));
@@ -1627,7 +1744,7 @@ DROP(R1);
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else408);
+JUMP_EQ(else12);
 //IN APPLIC 
 MOV(R0,FPARG(3));
 PUSH(R0); 
@@ -1649,19 +1766,19 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+2+3); 
-tail_call_copy631:
+tail_call_copy19:
 CMP(R3,R5); 
-JUMP_EQ(jmpa631); 
+JUMP_EQ(jmpa19); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy631); 
-jmpa631: 
+ JUMP(tail_call_copy19); 
+jmpa19: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
 
-JUMP(if_exit408);
-else408:
+JUMP(if_exit12);
+else12:
 //IN APPLIC 
 //IN APPLIC 
 MOV(R0,FPARG(3));
@@ -1736,24 +1853,27 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+2+3); 
-tail_call_copy630:
+tail_call_copy18:
 CMP(R3,R5); 
-JUMP_EQ(jmpa630); 
+JUMP_EQ(jmpa18); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy630); 
-jmpa630: 
+ JUMP(tail_call_copy18); 
+jmpa18: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
-if_exit408:
-if_exit409:
+if_exit12:
+if_exit13:
 POP(FP);
 RETURN;
-exit684: //OUT OF LAMBDA 
+exit24: //OUT OF LAMBDA 
 
  MOV(IND(129), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -1767,53 +1887,53 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1685: 
+lambda_loop125: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit685); 
+JUMP_GE(lambda_loop1_exit25); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1685);
-lambda_loop1_exit685: 
+JUMP(lambda_loop125);
+lambda_loop1_exit25: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2685: 
+lambda_loop225: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit685); 
+JUMP_GE(lambda_loop2_exit25); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2685); 
-lambda_loop2_exit685: 
+JUMP(lambda_loop225); 
+lambda_loop2_exit25: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda685));
-JUMP(exit685); 
-lambda685:
+MOV(INDD(R0,2),LABEL(lambda25));
+JUMP(exit25); 
+lambda25:
 PUSH(FP);
 MOV(FP,SP);
 MOV(R1,FPARG(1)); 
 MOV(R2,NIL); 
-lambda_opt_loop124:
+lambda_opt_loop4:
  CMP(R1,0);
- JUMP_EQ(finish_lambda_opt124); 
+ JUMP_EQ(finish_lambda_opt4); 
  PUSH(R2); 
  PUSH(FPARG(R1+1)); 
  CALL(MAKE_SOB_PAIR);
  DROP(2); 
  SUB(R1,1); 
  MOV(R2,R0); 
- JUMP(lambda_opt_loop124);
-finish_lambda_opt124: 
+ JUMP(lambda_opt_loop4);
+finish_lambda_opt4: 
 CMP(IND(R2),T_NIL); 
-JUMP_EQ(empty_opt_case124); 
+JUMP_EQ(empty_opt_case4); 
 MOV(FPARG(2+0),R2); 
 MOV(R4,FP); 
  SUB(R4,IMM(4)); 
@@ -1824,15 +1944,15 @@ SUB(R3,IMM(4));
 SUB(R3,FPARG(1)); 
 MOV(R5,R3); 
 SUB(R5,R4); 
-JUMP_EQ(empty_opt_case124); 
-stack_fix124: 
+JUMP_EQ(empty_opt_case4); 
+stack_fix4: 
  CMP(R3,SP); 
- JUMP_EQ(stack_fix_end124); 
+ JUMP_EQ(stack_fix_end4); 
  MOV(STACK(R4),STACK(R3)); 
  INCR(R4); 
  INCR(R3); 
- JUMP(stack_fix124); 
-empty_opt_case124:
+ JUMP(stack_fix4); 
+empty_opt_case4:
   MOV(R5,IMM(-1)); 
  MOV(R6,SP);
   MOV(R3,SP); 
@@ -1840,16 +1960,16 @@ empty_opt_case124:
   MOV(R4,FP); 
   SUB(R4,IMM(4)); 
  SUB(R4,FPARG(1)); // now r4 should hold number of old args 
-empty_opt124:
+empty_opt4:
  CMP(R3,R4); 
- JUMP_LT(end_of_nil_case_opt124); 
+ JUMP_LT(end_of_nil_case_opt4); 
  MOV(STACK(R6),STACK(R3)); 
  DECR(R6); 
  DECR(R3); 
- JUMP(empty_opt124);
-end_of_nil_case_opt124: 
+ JUMP(empty_opt4);
+end_of_nil_case_opt4: 
 MOV(STACK(R6),R2); 
-stack_fix_end124: 
+stack_fix_end4: 
 //need to fix the stack pointer stuff now 
 SUB(SP,R5); 
 MOV(FP,SP); 
@@ -1863,36 +1983,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1686: 
+lambda_loop126: 
 CMP(R4,1); 
-JUMP_GE(lambda_loop1_exit686); 
+JUMP_GE(lambda_loop1_exit26); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1686);
-lambda_loop1_exit686: 
+JUMP(lambda_loop126);
+lambda_loop1_exit26: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2686: 
+lambda_loop226: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit686); 
+JUMP_GE(lambda_loop2_exit26); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2686); 
-lambda_loop2_exit686: 
+JUMP(lambda_loop226); 
+lambda_loop2_exit26: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda686));
-JUMP(exit686); 
-lambda686:
+MOV(INDD(R0,2),LABEL(lambda26));
+JUMP(exit26); 
+lambda26:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -1935,19 +2055,19 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+2+3); 
-tail_call_copy632:
+tail_call_copy20:
 CMP(R3,R5); 
-JUMP_EQ(jmpa632); 
+JUMP_EQ(jmpa20); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy632); 
-jmpa632: 
+ JUMP(tail_call_copy20); 
+jmpa20: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
 POP(FP);
 RETURN;
-exit686: //OUT OF LAMBDA 
+exit26: //OUT OF LAMBDA 
 PUSH(R0); 
 PUSH(IMM(1)); 
 // IN LAMBDA AAAAA 
@@ -1959,36 +2079,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1687: 
+lambda_loop127: 
 CMP(R4,1); 
-JUMP_GE(lambda_loop1_exit687); 
+JUMP_GE(lambda_loop1_exit27); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1687);
-lambda_loop1_exit687: 
+JUMP(lambda_loop127);
+lambda_loop1_exit27: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2687: 
+lambda_loop227: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit687); 
+JUMP_GE(lambda_loop2_exit27); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2687); 
-lambda_loop2_exit687: 
+JUMP(lambda_loop227); 
+lambda_loop2_exit27: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda687));
-JUMP(exit687); 
-lambda687:
+MOV(INDD(R0,2),LABEL(lambda27));
+JUMP(exit27); 
+lambda27:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -2016,19 +2136,19 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+3+3); 
-tail_call_copy633:
+tail_call_copy21:
 CMP(R3,R5); 
-JUMP_EQ(jmpa633); 
+JUMP_EQ(jmpa21); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy633); 
-jmpa633: 
+ JUMP(tail_call_copy21); 
+jmpa21: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
 POP(FP);
 RETURN;
-exit687: //OUT OF LAMBDA 
+exit27: //OUT OF LAMBDA 
 PUSH(R0);
 CALL(IS_SOB_CLOSURE); 
 CMP(R0,0); 
@@ -2041,22 +2161,25 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+1+3); 
-tail_call_copy634:
+tail_call_copy22:
 CMP(R3,R5); 
-JUMP_EQ(jmpa634); 
+JUMP_EQ(jmpa22); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy634); 
-jmpa634: 
+ JUMP(tail_call_copy22); 
+jmpa22: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
 POP(FP);
 RETURN;
-exit685: //OUT OF LAMBDA 
+exit25: //OUT OF LAMBDA 
 
  MOV(IND(130), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -2070,55 +2193,58 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1688: 
+lambda_loop128: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit688); 
+JUMP_GE(lambda_loop1_exit28); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1688);
-lambda_loop1_exit688: 
+JUMP(lambda_loop128);
+lambda_loop1_exit28: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2688: 
+lambda_loop228: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit688); 
+JUMP_GE(lambda_loop2_exit28); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2688); 
-lambda_loop2_exit688: 
+JUMP(lambda_loop228); 
+lambda_loop2_exit28: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda688));
-JUMP(exit688); 
-lambda688:
+MOV(INDD(R0,2),LABEL(lambda28));
+JUMP(exit28); 
+lambda28:
 PUSH(FP);
 MOV(FP,SP);
 MOV(R0,FPARG(2));
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else410);
+JUMP_EQ(else14);
 MOV(R0,IMM(3)); 
 
-JUMP(if_exit410);
-else410:
+JUMP(if_exit14);
+else14:
 MOV(R0,IMM(5)); 
-if_exit410:
+if_exit14:
 POP(FP);
 RETURN;
-exit688: //OUT OF LAMBDA 
+exit28: //OUT OF LAMBDA 
 
  MOV(IND(131), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -2132,36 +2258,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1689: 
+lambda_loop129: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit689); 
+JUMP_GE(lambda_loop1_exit29); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1689);
-lambda_loop1_exit689: 
+JUMP(lambda_loop129);
+lambda_loop1_exit29: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2689: 
+lambda_loop229: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit689); 
+JUMP_GE(lambda_loop2_exit29); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2689); 
-lambda_loop2_exit689: 
+JUMP(lambda_loop229); 
+lambda_loop2_exit29: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda689));
-JUMP(exit689); 
-lambda689:
+MOV(INDD(R0,2),LABEL(lambda29));
+JUMP(exit29); 
+lambda29:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -2196,36 +2322,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1690: 
+lambda_loop130: 
 CMP(R4,1); 
-JUMP_GE(lambda_loop1_exit690); 
+JUMP_GE(lambda_loop1_exit30); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1690);
-lambda_loop1_exit690: 
+JUMP(lambda_loop130);
+lambda_loop1_exit30: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2690: 
+lambda_loop230: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit690); 
+JUMP_GE(lambda_loop2_exit30); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2690); 
-lambda_loop2_exit690: 
+JUMP(lambda_loop230); 
+lambda_loop2_exit30: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda690));
-JUMP(exit690); 
-lambda690:
+MOV(INDD(R0,2),LABEL(lambda30));
+JUMP(exit30); 
+lambda30:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -2242,36 +2368,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1691: 
+lambda_loop131: 
 CMP(R4,2); 
-JUMP_GE(lambda_loop1_exit691); 
+JUMP_GE(lambda_loop1_exit31); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1691);
-lambda_loop1_exit691: 
+JUMP(lambda_loop131);
+lambda_loop1_exit31: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2691: 
+lambda_loop231: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit691); 
+JUMP_GE(lambda_loop2_exit31); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2691); 
-lambda_loop2_exit691: 
+JUMP(lambda_loop231); 
+lambda_loop2_exit31: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda691));
-JUMP(exit691); 
-lambda691:
+MOV(INDD(R0,2),LABEL(lambda31));
+JUMP(exit31); 
+lambda31:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -2312,19 +2438,19 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+2+3); 
-tail_call_copy635:
+tail_call_copy23:
 CMP(R3,R5); 
-JUMP_EQ(jmpa635); 
+JUMP_EQ(jmpa23); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy635); 
-jmpa635: 
+ JUMP(tail_call_copy23); 
+jmpa23: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
 POP(FP);
 RETURN;
-exit691: //OUT OF LAMBDA 
+exit31: //OUT OF LAMBDA 
 PUSH(R0); 
 PUSH(IMM(3)); 
 MOV(R0,IND(126)); 
@@ -2342,19 +2468,19 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+3+3); 
-tail_call_copy636:
+tail_call_copy24:
 CMP(R3,R5); 
-JUMP_EQ(jmpa636); 
+JUMP_EQ(jmpa24); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy636); 
-jmpa636: 
+ JUMP(tail_call_copy24); 
+jmpa24: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
 POP(FP);
 RETURN;
-exit690: //OUT OF LAMBDA 
+exit30: //OUT OF LAMBDA 
 PUSH(R0);
 CALL(IS_SOB_CLOSURE); 
 CMP(R0,0); 
@@ -2367,22 +2493,25 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+1+3); 
-tail_call_copy637:
+tail_call_copy25:
 CMP(R3,R5); 
-JUMP_EQ(jmpa637); 
+JUMP_EQ(jmpa25); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy637); 
-jmpa637: 
+ JUMP(tail_call_copy25); 
+jmpa25: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
 POP(FP);
 RETURN;
-exit689: //OUT OF LAMBDA 
+exit29: //OUT OF LAMBDA 
 
  MOV(IND(132), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -2396,53 +2525,53 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1692: 
+lambda_loop132: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit692); 
+JUMP_GE(lambda_loop1_exit32); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1692);
-lambda_loop1_exit692: 
+JUMP(lambda_loop132);
+lambda_loop1_exit32: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2692: 
+lambda_loop232: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit692); 
+JUMP_GE(lambda_loop2_exit32); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2692); 
-lambda_loop2_exit692: 
+JUMP(lambda_loop232); 
+lambda_loop2_exit32: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda692));
-JUMP(exit692); 
-lambda692:
+MOV(INDD(R0,2),LABEL(lambda32));
+JUMP(exit32); 
+lambda32:
 PUSH(FP);
 MOV(FP,SP);
 MOV(R1,FPARG(1)); 
 MOV(R2,NIL); 
-lambda_opt_loop125:
+lambda_opt_loop5:
  CMP(R1,1);
- JUMP_EQ(finish_lambda_opt125); 
+ JUMP_EQ(finish_lambda_opt5); 
  PUSH(R2); 
  PUSH(FPARG(R1+1)); 
  CALL(MAKE_SOB_PAIR);
  DROP(2); 
  SUB(R1,1); 
  MOV(R2,R0); 
- JUMP(lambda_opt_loop125);
-finish_lambda_opt125: 
+ JUMP(lambda_opt_loop5);
+finish_lambda_opt5: 
 CMP(IND(R2),T_NIL); 
-JUMP_EQ(empty_opt_case125); 
+JUMP_EQ(empty_opt_case5); 
 MOV(FPARG(2+1),R2); 
 MOV(R4,FP); 
  SUB(R4,IMM(4)); 
@@ -2453,15 +2582,15 @@ SUB(R3,IMM(4));
 SUB(R3,FPARG(1)); 
 MOV(R5,R3); 
 SUB(R5,R4); 
-JUMP_EQ(empty_opt_case125); 
-stack_fix125: 
+JUMP_EQ(empty_opt_case5); 
+stack_fix5: 
  CMP(R3,SP); 
- JUMP_EQ(stack_fix_end125); 
+ JUMP_EQ(stack_fix_end5); 
  MOV(STACK(R4),STACK(R3)); 
  INCR(R4); 
  INCR(R3); 
- JUMP(stack_fix125); 
-empty_opt_case125:
+ JUMP(stack_fix5); 
+empty_opt_case5:
   MOV(R5,IMM(-1)); 
  MOV(R6,SP);
   MOV(R3,SP); 
@@ -2469,16 +2598,16 @@ empty_opt_case125:
   MOV(R4,FP); 
   SUB(R4,IMM(4)); 
  SUB(R4,FPARG(1)); // now r4 should hold number of old args 
-empty_opt125:
+empty_opt5:
  CMP(R3,R4); 
- JUMP_LT(end_of_nil_case_opt125); 
+ JUMP_LT(end_of_nil_case_opt5); 
  MOV(STACK(R6),STACK(R3)); 
  DECR(R6); 
  DECR(R3); 
- JUMP(empty_opt125);
-end_of_nil_case_opt125: 
+ JUMP(empty_opt5);
+end_of_nil_case_opt5: 
 MOV(STACK(R6),R2); 
-stack_fix_end125: 
+stack_fix_end5: 
 //need to fix the stack pointer stuff now 
 SUB(SP,R5); 
 MOV(FP,SP); 
@@ -2520,11 +2649,11 @@ DROP(R1);
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else411);
+JUMP_EQ(else15);
 MOV(R0,IMM(12)); 
 
-JUMP(if_exit411);
-else411:
+JUMP(if_exit15);
+else15:
 //IN APPLIC 
 //IN APPLIC 
 MOV(R0,FPARG(3));
@@ -2601,36 +2730,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1693: 
+lambda_loop133: 
 CMP(R4,1); 
-JUMP_GE(lambda_loop1_exit693); 
+JUMP_GE(lambda_loop1_exit33); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1693);
-lambda_loop1_exit693: 
+JUMP(lambda_loop133);
+lambda_loop1_exit33: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2693: 
+lambda_loop233: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit693); 
+JUMP_GE(lambda_loop2_exit33); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2693); 
-lambda_loop2_exit693: 
+JUMP(lambda_loop233); 
+lambda_loop2_exit33: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda693));
-JUMP(exit693); 
-lambda693:
+MOV(INDD(R0,2),LABEL(lambda33));
+JUMP(exit33); 
+lambda33:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -2696,19 +2825,19 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+2+3); 
-tail_call_copy638:
+tail_call_copy26:
 CMP(R3,R5); 
-JUMP_EQ(jmpa638); 
+JUMP_EQ(jmpa26); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy638); 
-jmpa638: 
+ JUMP(tail_call_copy26); 
+jmpa26: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
 POP(FP);
 RETURN;
-exit693: //OUT OF LAMBDA 
+exit33: //OUT OF LAMBDA 
 PUSH(R0);
 CALL(IS_SOB_CLOSURE); 
 CMP(R0,0); 
@@ -2721,23 +2850,26 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+2+3); 
-tail_call_copy639:
+tail_call_copy27:
 CMP(R3,R5); 
-JUMP_EQ(jmpa639); 
+JUMP_EQ(jmpa27); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy639); 
-jmpa639: 
+ JUMP(tail_call_copy27); 
+jmpa27: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
-if_exit411:
+if_exit15:
 POP(FP);
 RETURN;
-exit692: //OUT OF LAMBDA 
+exit32: //OUT OF LAMBDA 
 
  MOV(IND(133), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -2751,36 +2883,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1694: 
+lambda_loop134: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit694); 
+JUMP_GE(lambda_loop1_exit34); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1694);
-lambda_loop1_exit694: 
+JUMP(lambda_loop134);
+lambda_loop1_exit34: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2694: 
+lambda_loop234: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit694); 
+JUMP_GE(lambda_loop2_exit34); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2694); 
-lambda_loop2_exit694: 
+JUMP(lambda_loop234); 
+lambda_loop2_exit34: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda694));
-JUMP(exit694); 
-lambda694:
+MOV(INDD(R0,2),LABEL(lambda34));
+JUMP(exit34); 
+lambda34:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -2804,11 +2936,11 @@ DROP(R1);
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else412);
+JUMP_EQ(else16);
 MOV(R0,IMM(24)); 
 
-JUMP(if_exit412);
-else412:
+JUMP(if_exit16);
+else16:
 //IN APPLIC 
 //IN APPLIC 
 //IN APPLIC 
@@ -2904,23 +3036,26 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+2+3); 
-tail_call_copy640:
+tail_call_copy28:
 CMP(R3,R5); 
-JUMP_EQ(jmpa640); 
+JUMP_EQ(jmpa28); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy640); 
-jmpa640: 
+ JUMP(tail_call_copy28); 
+jmpa28: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
-if_exit412:
+if_exit16:
 POP(FP);
 RETURN;
-exit694: //OUT OF LAMBDA 
+exit34: //OUT OF LAMBDA 
 
  MOV(IND(134), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -2934,36 +3069,36 @@ DROP(1);
 MOV(R2, FPARG(0)); 
 MOV(R4,0); 
 MOV(R5,1); 
-lambda_loop1695: 
+lambda_loop135: 
 CMP(R4,0); 
-JUMP_GE(lambda_loop1_exit695); 
+JUMP_GE(lambda_loop1_exit35); 
 MOV(R3, INDD(R2,R4)); 
 MOV(INDD(R1,R5), R3); 
 INCR(R4); 
 INCR(R5); 
-JUMP(lambda_loop1695);
-lambda_loop1_exit695: 
+JUMP(lambda_loop135);
+lambda_loop1_exit35: 
 PUSH(FPARG(1)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(R4,0); 
-lambda_loop2695: 
+lambda_loop235: 
 CMP(R4,FPARG(1)); 
-JUMP_GE(lambda_loop2_exit695); 
+JUMP_GE(lambda_loop2_exit35); 
 MOV(R3,FPARG(2+R4)); 
 MOV(INDD(R0,R4),R3); 
 INCR(R4); 
-JUMP(lambda_loop2695); 
-lambda_loop2_exit695: 
+JUMP(lambda_loop235); 
+lambda_loop2_exit35: 
 MOV(INDD(R1,0),R0); 
 PUSH(IMM(3)); 
 CALL(MALLOC); 
 DROP(1); 
 MOV(INDD(R0,0),T_CLOSURE);
 MOV(INDD(R0,1),R1); 
-MOV(INDD(R0,2),LABEL(lambda695));
-JUMP(exit695); 
-lambda695:
+MOV(INDD(R0,2),LABEL(lambda35));
+JUMP(exit35); 
+lambda35:
 PUSH(FP);
 MOV(FP,SP);
 //IN APPLIC 
@@ -2987,11 +3122,11 @@ DROP(R1);
 
 CMP(R0,FALSE);
 
-JUMP_EQ(else413);
+JUMP_EQ(else17);
 MOV(R0,IMM(13)); 
 
-JUMP(if_exit413);
-else413:
+JUMP(if_exit17);
+else17:
 //IN APPLIC 
 //IN APPLIC 
 MOV(R0,IMM(22)); 
@@ -3030,23 +3165,26 @@ SUB(R2,(FPARG(1)+4));
 MOV(R3,FP); 
 MOV(FP,FPARG(-2));
 MOV(R5,R3+1+3); 
-tail_call_copy641:
+tail_call_copy29:
 CMP(R3,R5); 
-JUMP_EQ(jmpa641); 
+JUMP_EQ(jmpa29); 
  MOV(STACK(R2),STACK(R3)); 
  ADD(R3,1); 
  ADD(R2,1); 
- JUMP(tail_call_copy641); 
-jmpa641: 
+ JUMP(tail_call_copy29); 
+jmpa29: 
 MOV(SP,R2); 
 JUMPA(INDD(R0,2)); 
-if_exit413:
+if_exit17:
 POP(FP);
 RETURN;
-exit695: //OUT OF LAMBDA 
+exit35: //OUT OF LAMBDA 
 
  MOV(IND(135), R0);
 MOV(R0,VOID); 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -3068,6 +3206,9 @@ POP(R1);
 POP(R1); 
 DROP(R1); 
  //OUT OF APPLIC 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 
  /*new expr */ 
  
@@ -3109,13 +3250,12 @@ POP(R1);
 POP(R1); 
 DROP(R1); 
  //OUT OF APPLIC 
+PUSH(R0);
+CALL(PRINT_EXPR);
+DROP(1); 
 /*epilogue */ 
 
 
-PUSH(R0);
-CALL(WRITE_SOB);
-printf("\n");
-DROP(1);
 STOP_MACHINE;
 return 0;
 UNDEFINED_VARIABLE_ERROR:

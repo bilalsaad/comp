@@ -34,6 +34,7 @@
 #include "lib/scheme/write_sob_symbol.asm"
 #include "lib/scheme/write_sob_fraction.asm"
 #include "lib/scheme/write_sob.asm"
+#include "lib/scheme/print_expr.asm"
 #include "lib/scheme/prims.asm"
 
 
