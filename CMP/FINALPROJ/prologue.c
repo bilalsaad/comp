@@ -21,7 +21,7 @@ int main()
 #include "arch/system.lib"
 #include "arch/scheme.lib"
   CONTINUE:
-  PUSH(IMM(0));
+  PUSH(IMM(0)); 
   PUSH(IMM(0));
   PUSH(IMM(0));
   PUSH(IMM(0));
