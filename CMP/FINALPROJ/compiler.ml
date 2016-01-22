@@ -333,7 +333,7 @@ let nt_sexpr =
      let nt_improper_list = pack nt_improper_list
                    (fun (((_,ls),_),(e,_)) -> ls @ [e]) in
      let nt_improper_list = pack nt_improper_list improper_to_pair in
-     disj nt_improper_list nt_proper_list
+     disj nt_proper_list nt_improper_list 
 
     and nt_vector = 
      let nt_sexpr = star (delayed make) in
@@ -1735,6 +1735,7 @@ let rd_expz str =
   List.map Semantics.run_semantics sz;;
 
 let foo ()=  
-  Code_Gen.compile_scheme_file "www.scm" "www.c";
-  Sys.command "gcc -o out www.c";
+  Code_Gen.compile_scheme_file "examples.scm" "examples.c";
+  Sys.command "gcc -o out examples.c";
+  Sys.command "rm examples.c";
   Sys.command "./out";;

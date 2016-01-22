@@ -1,3 +1,8 @@
+;;; torture-test-for-compiler-00.scm
+;;; Testing pvar, bvar, lambda-simple, applic, #f, #t
+;;; This test should return #t
+;;;
+;;; Programmer: Mayer Goldberg, 2010
 
 
 (((((lambda (a)
