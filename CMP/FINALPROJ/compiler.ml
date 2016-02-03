@@ -309,31 +309,20 @@ let ign = const (fun _ ->false);;
 let nt_sexpr =
   let rec make()=
     let nt_lb,nt_rb = add_skip ign (char '('), add_skip ign (char ')') in
-
-
     let rec nt_pair = 
      let nt_lb,nt_rb = add_skip (delayed make)  (char '('),
                         add_skip (delayed make) (char ')') in 
      let nt_sexpr = delayed make in
      let nt_dot = add_skip nt_sexpr (char '.') in
-     let nt_proper_list = caten nt_lb (caten (star nt_sexpr) nt_rb) in
-     let rec proper_to_pair = (function
-       | [] -> Nil
-       | x::xs ->  Pair(x,proper_to_pair xs)) in
-     
-     let rec improper_to_pair = (function
-       | [] | [_] -> raise X_this_should_not_happen
-       | x :: y :: [] -> Pair(x,y) 
-       | x::xs -> Pair(x, improper_to_pair xs)) in
-     let nt_proper_list = pack nt_proper_list (fun (_,(ls,_)) -> ls) in
-     let nt_proper_list = pack nt_proper_list proper_to_pair in
-     let nt_improper_list = caten nt_lb (plus nt_sexpr) in
-     let nt_improper_list = caten nt_improper_list nt_dot in
-     let nt_improper_list = caten nt_improper_list (caten nt_sexpr nt_rb) in
-     let nt_improper_list = pack nt_improper_list
-                   (fun (((_,ls),_),(e,_)) -> ls @ [e]) in
-     let nt_improper_list = pack nt_improper_list improper_to_pair in
-     disj nt_proper_list nt_improper_list 
+     let nt_rb'=pack nt_rb (fun _->Nil) in
+     let nt_rb'' = caten nt_sexpr nt_rb in
+     let nt_rb''=pack (caten nt_dot nt_rb'') (fun (_dot,(sexpr,_rb))->sexpr) in
+     let nt_tl=disj nt_rb'' nt_rb' in
+     let nt_pr = caten nt_lb (caten (star nt_sexpr) nt_tl) in
+     let nt_proper_list = pack nt_pr 
+      (fun (_,(ls,sexp))-> List.fold_right 
+          (fun a b->Pair(a,b)) ls sexp)  in
+     nt_proper_list
 
     and nt_vector = 
      let nt_sexpr = star (delayed make) in
@@ -928,7 +917,7 @@ let annotate_tail_calls e =
     | (Box' _) as e -> e | (BoxGet' _ ) as e -> e
     | (BoxSet' _) as e -> e 
     | Def' (v,e)  -> Def' (v, run false e)
-    | Set' (v,e) -> Set' (v, run intail e)
+    | Set' (v,e) -> Set' (v, run false e)
     | If'(test,dit,dif) ->
         If'(run false test, run intail dit, run intail dif)
     | Or' exprs -> 
