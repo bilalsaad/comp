@@ -221,7 +221,7 @@ let nt_fract =
           if b < 1 
             then raise (err "X_invalid_fraction") 
           else
-          let d = gcd a b in 
+          let d =abs (gcd a b) in 
           let numerator = a/d in
           let denominator = b/d in
           if denominator = 1 then Int numerator else
@@ -1212,6 +1212,7 @@ module Constants = struct
           "MOV(R1,R0); \n"^
           "ADD(R0,IMM(2)); \n" in
       let init_str = 
+      "/* BEHOLD THE CREATION OF THE SYMBOL TABLE */ \n" ^
       "MOV(IND("^string_of_int string_list^"),R0); \n"^ 
       mov_str (string_of_int (List.hd string_addresses)) in         
       List.fold_left
@@ -1220,8 +1221,10 @@ module Constants = struct
             a^
             "MOV(INDD(R1,1),R0); \n"^
             mov_str b_add)
-        init_str (List.tl string_addresses)^mov_str "T_UNDEFINED" 
-        , List.length symbols 
+        init_str (List.tl string_addresses)^ 
+          "MOV(INDD(R1,1),R0); \n"^
+          "MOV(INDD(R0,0),IMM(T_UNDEFINED));\nMOV(INDD(R0,1),IMM(205774250));"
+        , 1 + List.length symbols 
     else 
 
       "MOV(INDD(R0,0),IMM(T_UNDEFINED)); \n"^
@@ -1714,17 +1717,4 @@ let compile_scheme_file scm_source_file asm_target_file =
 end;;
 
 let compose f g x = f(g x) ;;
-let tst = compose Code_Gen.code_gen Semantics.run_semantics;;
-let tst = compose tst Tag_Parser.read_expression;;
-let printtst x = 
-  let x= tst x in
-  Printf.printf "%s" x;;
-let rd_expz str =
-  let sz = Tag_Parser.read_expressions str in
-  List.map Semantics.run_semantics sz;;
 
-let foo ()=  
-  Code_Gen.compile_scheme_file "examples.scm" "examples.c";
-  Sys.command "gcc -o out examples.c";
-  Sys.command "rm examples.c";
-  Sys.command "./out";;

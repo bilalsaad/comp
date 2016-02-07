@@ -195,6 +195,9 @@ FUNC_START;
 CHECK_ARGS(1);
 MOV(R0,PARAM(0))
 MOV(R0,INDD(R0,1));
+PUSH(R0);
+CALL(MAKE_SOB_INTEGER);
+DROP(1);
 FUNC_END;
 /****************************************/
 
@@ -203,6 +206,9 @@ FUNC_START;
 CHECK_ARGS(1);
 MOV(R0,PARAM(0))
 MOV(R0,INDD(R0,2));
+PUSH(R0);
+CALL(MAKE_SOB_INTEGER);
+DROP(1)
 FUNC_END;
 
 /****************************************/
@@ -502,7 +508,6 @@ PUSH(R2);
 PUSH(R3);
 PUSH(R4);
 PUSH(R5);
-
 MOV(R1,FPARG(0));
 MOV(R2,FPARG(1));
 MOV(R3,INDD(R1,1));
@@ -646,7 +651,7 @@ RETURN;
 /*make-string given a char and a number, it will make a string hopefully*/
 L_make_string:
 FUNC_START;
-CHECK_ARGS(2);
+//CHECK_ARGS(2);
 CHECK_TYPE(T_INTEGER,PARAM(0));
 CHECK_TYPE(T_CHAR,PARAM(1));
 MOV(R3,IMM(0));
@@ -802,7 +807,6 @@ FUNC_END;
 /****************************************/
 L_string_to_symbol:
 FUNC_START;
-
 CHECK_ARGS(1);
 CHECK_TYPE(T_STRING,PARAM(0));
 PUSH(IMM(2));
